@@ -64,7 +64,7 @@ JetKVM 是一套高性能、开源的 KVM over IP（Keyboard/Video/Mouse）软�
 docker host 模式：
 
 ```bash
-sudo docker run --name blikvm -itd --privileged=true \
+sudo docker run --name jetkvm -itd --privileged=true \
     -v /lib/modules:/lib/modules:ro -v /dev:/dev \
     -v /sys/kernel/config:/sys/kernel/config \
     --net=host \
@@ -74,7 +74,7 @@ sudo docker run --name blikvm -itd --privileged=true \
 docker bridge 模式：
 
 ```bash
-sudo docker run --name blikvm -itd --privileged=true \
+sudo docker run --name jetkvm -itd --privileged=true \
     -v /lib/modules:/lib/modules:ro -v /dev:/dev \
     -v /sys/kernel/config:/sys/kernel/config \
     -p 8080:8080 -p 4430:4430 \
