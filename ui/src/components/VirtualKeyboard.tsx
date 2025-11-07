@@ -72,27 +72,30 @@ function KeyboardWrapper() {
     return [...modifierNames, ...keyNames, " "]; // we have to have at least one space to avoid keyboard whining
   }, [keysDownState]);
 
+  const isTouchEvent = (e: MouseEvent | TouchEvent): e is TouchEvent =>
+    typeof (e as any)?.touches !== "undefined";
+
   const startDrag = useCallback((e: MouseEvent | TouchEvent) => {
     if (!keyboardRef.current) return;
-    if (e instanceof TouchEvent && e.touches.length > 1) return;
+    if (isTouchEvent(e) && e.touches.length > 1) return;
     setIsDragging(true);
 
-    const clientX = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
-    const clientY = e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
+    const clientX = isTouchEvent(e) ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = isTouchEvent(e) ? e.touches[0].clientY : (e as MouseEvent).clientY;
 
     const rect = keyboardRef.current.getBoundingClientRect();
     setPosition({
       x: clientX - rect.left,
       y: clientY - rect.top,
     });
-  }, []);
+  }, [keyboardRef]);
 
   const onDrag = useCallback(
     (e: MouseEvent | TouchEvent) => {
       if (!keyboardRef.current) return;
       if (isDragging) {
-        const clientX = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
-        const clientY = e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
+        const clientX = isTouchEvent(e) ? e.touches[0].clientX : (e as MouseEvent).clientX;
+        const clientY = isTouchEvent(e) ? e.touches[0].clientY : (e as MouseEvent).clientY;
 
         const newX = clientX - position.x;
         const newY = clientY - position.y;
@@ -107,7 +110,7 @@ function KeyboardWrapper() {
         });
       }
     },
-    [isDragging, position.x, position.y],
+    [isDragging, position.x, position.y, keyboardRef],
   );
 
   const endDrag = useCallback(() => {
