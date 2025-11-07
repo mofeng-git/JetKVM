@@ -16,9 +16,12 @@
 #include "ctrl.h"   // video_report_format, video_send_frame
 #include "log.h"    // log_info, log_warn, log_error, log_trace
 #include "uvc_backend.h" // function prototypes for start/stop/reinit
+#include "video_encoder.h" // 统一编码器接口
 
-#include <x264.h>
 #include <turbojpeg.h>
+#ifdef JETKVM_HAVE_MPP
+#include "dec_mppjpeg.h"
+#endif
 
 // Simple V4L2 MMAP buffer
 struct uvc_buf { void *start; size_t length; };
@@ -36,7 +39,7 @@ static pthread_mutex_t uvc_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // JPEG decoder
 static tjhandle tj = NULL;
-static unsigned char *yuv_buf = NULL; // I420 contiguous buffer
+static unsigned char *yuv_buf = NULL; // I420/NV12 contiguous buffer
 static size_t yuv_buf_size = 0;
 // MJPEG source YUV buffer as produced by TurboJPEG (sampling may be 420/422/444)
 static unsigned char *yuv_src = NULL;
@@ -44,17 +47,22 @@ static size_t yuv_src_size = 0;
 static int mjpeg_subsamp = -1; // TJSAMP_*
 static int mjpeg_colorspace = -1;
 
-// x264 encoder (default). If JETKVM_ENCODER=mpp and libmpp is integrated in this
-// build in the future, we can add an alternate path. For now, fall back to x264.
-static x264_t *x264 = NULL;
-static x264_param_t x264_param;
-static x264_picture_t x_pic_in;
+// 统一编码器接口
+static const encoder_ops_t *encoder = NULL;
+static void *encoder_ctx = NULL;
+static encoder_type_t encoder_type = ENCODER_TYPE_X264;
+static pixel_format_t encoder_input_fmt = PIXEL_FORMAT_I420;
+
+// 编码器配置
 static int repeat_headers = 1;
 static int bitrate_kbps = 2000;
 static int keyint = 60;
 static char x264_preset[32] = "ultrafast";
 static char x264_tune[32] = "zerolatency";
 static char x264_profile[32] = "baseline";
+
+// 解码器选择
+static int use_mpp_decoder = 0; // 1 -> use MPP JPEG decoder (dec_mppjpeg), 0 -> TurboJPEG
 
 // input pixel format selection
 static uint32_t uvc_pixfmt = V4L2_PIX_FMT_MJPEG; // default MJPG
@@ -98,10 +106,42 @@ static int uvc_set_format() {
     fmt.fmt.pix.height = uvc_height;
     fmt.fmt.pix.pixelformat = uvc_pixfmt;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
+    
+    uint32_t requested_fmt = uvc_pixfmt;
+    
     if (xioctl(uvc_fd, VIDIOC_S_FMT, &fmt) < 0) {
         log_error("UVC: VIDIOC_S_FMT failed: %s", strerror(errno));
         return -1;
     }
+    
+    // CRITICAL: Verify the actual format returned by the driver
+    if (fmt.fmt.pix.pixelformat != requested_fmt) {
+        char req_fourcc[5] = {0}, got_fourcc[5] = {0};
+        memcpy(req_fourcc, &requested_fmt, 4);
+        memcpy(got_fourcc, &fmt.fmt.pix.pixelformat, 4);
+        log_warn("UVC: Requested format %s (0x%08X) but device returned %s (0x%08X)", 
+                 req_fourcc, requested_fmt, got_fourcc, fmt.fmt.pix.pixelformat);
+        log_warn("UVC: Device does not support requested format, adapting...");
+        
+        // Update our format to match what device actually provides
+        uvc_pixfmt = fmt.fmt.pix.pixelformat;
+    }
+    
+    // Also verify dimensions
+    if (fmt.fmt.pix.width != (uint32_t)uvc_width || fmt.fmt.pix.height != (uint32_t)uvc_height) {
+        log_warn("UVC: Requested %dx%d but device returned %dx%d, adapting...",
+                 uvc_width, uvc_height, fmt.fmt.pix.width, fmt.fmt.pix.height);
+        uvc_width = fmt.fmt.pix.width;
+        uvc_height = fmt.fmt.pix.height;
+    }
+    
+    log_info("UVC: Format set to %dx%d, pixelformat=0x%08X (%c%c%c%c)",
+             fmt.fmt.pix.width, fmt.fmt.pix.height, fmt.fmt.pix.pixelformat,
+             (fmt.fmt.pix.pixelformat >> 0) & 0xFF,
+             (fmt.fmt.pix.pixelformat >> 8) & 0xFF,
+             (fmt.fmt.pix.pixelformat >> 16) & 0xFF,
+             (fmt.fmt.pix.pixelformat >> 24) & 0xFF);
+    
     // Try set FPS
     struct v4l2_streamparm parm; memset(&parm, 0, sizeof parm);
     parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -212,32 +252,53 @@ static void yuyv_to_i420(const unsigned char *src, int width, int height,
     }
 }
 
-static int init_x264() {
-    x264_param_default_preset(&x264_param, x264_preset, x264_tune);
-    x264_param.i_csp = X264_CSP_I420;
-    x264_param.i_width = uvc_width;
-    x264_param.i_height = uvc_height;
-    x264_param.i_fps_num = uvc_fps;
-    x264_param.i_fps_den = 1;
-    x264_param.i_keyint_max = keyint;
-    x264_param.b_repeat_headers = repeat_headers;
-    x264_param.b_annexb = 1; // Annex B for RTP packaging
-    x264_param.b_vfr_input = 0;
-    x264_param.rc.i_rc_method = X264_RC_ABR;
-    x264_param.rc.i_bitrate = bitrate_kbps;
-    x264_param.i_threads = 0; // auto
-    if (x264_param_apply_profile(&x264_param, x264_profile) < 0) {
-        log_warn("UVC: failed to apply x264 profile %s, continuing", x264_profile);
+static void i420_to_nv12(const unsigned char *Y, const unsigned char *U, const unsigned char *V,
+                         int width, int height, unsigned char *dst_nv12) {
+    size_t ysize = (size_t)width * height;
+    memcpy(dst_nv12, Y, ysize);
+    unsigned char *dst_uv = dst_nv12 + ysize;
+    const int cw = width / 2, ch = height / 2;
+    for (int y = 0; y < ch; ++y) {
+        for (int x = 0; x < cw; ++x) {
+            dst_uv[y*width + 2*x + 0] = U[y*cw + x];
+            dst_uv[y*width + 2*x + 1] = V[y*cw + x];
+        }
     }
-    x264 = x264_encoder_open(&x264_param);
-    if (!x264) {
-        log_error("UVC: x264_encoder_open failed");
+}
+
+static int init_encoder() {
+    // 获取编码器ops
+    encoder = encoder_get_ops(encoder_type);
+    if (!encoder) {
+        log_error("UVC: failed to get encoder ops for type %d", encoder_type);
         return -1;
     }
-    if (x264_picture_alloc(&x_pic_in, X264_CSP_I420, uvc_width, uvc_height) < 0) {
-        log_error("UVC: x264_picture_alloc failed");
+    
+    // 准备编码器配置
+    encoder_config_t config = {0};
+    config.width = uvc_width;
+    config.height = uvc_height;
+    config.fps = uvc_fps;
+    config.bitrate_kbps = bitrate_kbps;
+    config.keyint = keyint;
+    config.repeat_headers = repeat_headers;
+    strncpy(config.x264_preset, x264_preset, sizeof(config.x264_preset) - 1);
+    strncpy(config.x264_tune, x264_tune, sizeof(config.x264_tune) - 1);
+    strncpy(config.x264_profile, x264_profile, sizeof(config.x264_profile) - 1);
+    
+    // 初始化编码器
+    if (encoder->init(&config, &encoder_ctx) < 0) {
+        log_error("UVC: encoder init failed");
         return -1;
     }
+    
+    // 获取编码器期望的输入格式
+    encoder_input_fmt = encoder->get_input_format(encoder_ctx);
+    
+    log_info("UVC: encoder '%s' initialized, input format=%s",
+             encoder->name, 
+             encoder_input_fmt == PIXEL_FORMAT_I420 ? "I420" : "NV12");
+    
     return 0;
 }
 
@@ -268,6 +329,79 @@ static void* uvc_thread_main(void* arg) {
         }
 
         if (uvc_pixfmt == V4L2_PIX_FMT_MJPEG) {
+#ifdef JETKVM_HAVE_MPP
+            if (use_mpp_decoder) {
+                unsigned char* mjpg_ptr = (unsigned char*)uvc_buffers[buf.index].start;
+                unsigned long mjpg_size = buf.bytesused;
+                
+                // Debug: log first few frames to diagnose format issues
+                static int debug_frame_count = 0;
+                if (debug_frame_count < 5) {
+                    log_info("UVC: MJPEG frame #%d, size=%lu, first 32 bytes:", debug_frame_count, mjpg_size);
+                    char hex_buf[256] = {0};
+                    int hex_len = 0;
+                    for (int i = 0; i < 32 && i < (int)mjpg_size; i++) {
+                        hex_len += snprintf(hex_buf + hex_len, sizeof(hex_buf) - hex_len, "%02X ", mjpg_ptr[i]);
+                    }
+                    log_info("UVC:   %s", hex_buf);
+                    
+                    // Check for common UVC payload headers
+                    if (mjpg_size > 12 && mjpg_ptr[0] == 0x0C && mjpg_ptr[1] == 0x00) {
+                        log_info("UVC: Detected potential 12-byte UVC header (0x0C 0x00 ...)");
+                    }
+                    debug_frame_count++;
+                }
+                
+                // ⭐ 零拷贝路径：直接获取 MPP frame（不拷贝到 tight buffer）
+                dec_mppjpeg_frame_t dec_frame = {0};
+                int dr = dec_mppjpeg_decode_zero_copy(mjpg_ptr, mjpg_size, &dec_frame);
+                if (dr != 0) { 
+                    if (debug_frame_count <= 5) {
+                        log_warn("UVC: mppjpeg zero-copy decode failed (frame #%d, size=%lu)", debug_frame_count-1, mjpg_size); 
+                    }
+                    (void)xioctl(uvc_fd, VIDIOC_QBUF, &buf); 
+                    continue; 
+                }
+                
+                int iw = dec_frame.width;
+                int ih = dec_frame.height;
+                
+                if (iw != uvc_width || ih != uvc_height) {
+                    log_warn("UVC: MPP JPEG size %dx%d != requested %dx%d, adapting", iw, ih, uvc_width, uvc_height);
+                    uvc_width = iw; uvc_height = ih;
+                    // 重建编码器
+                    if (encoder && encoder->destroy) {
+                        encoder->destroy(&encoder_ctx);
+                    }
+                    if (init_encoder() < 0) { 
+                        log_error("UVC: re-init encoder failed"); 
+                        break; 
+                    }
+                    video_report_format(true, NULL, (u_int16_t)uvc_width, (u_int16_t)uvc_height, (double)uvc_fps);
+                }
+                
+                // ⭐ 零拷贝：传递解码器的 stride 信息（关键优化）
+                video_frame_t frame = {0};
+                frame.data = dec_frame.data_ptr;
+                frame.size = (size_t)dec_frame.hor_stride * dec_frame.ver_stride * 3 / 2;
+                frame.format = PIXEL_FORMAT_NV12;
+                frame.width = iw;
+                frame.height = ih;
+                frame.stride_y = dec_frame.hor_stride;   // ⭐ 使用解码器的 stride
+                frame.stride_uv = dec_frame.hor_stride;  // ⭐ 使用解码器的 stride
+                frame.pts_us = 0;
+                
+                encoded_packet_t packet = {0};
+                int enc_ret = encoder->encode(encoder_ctx, &frame, &packet);
+                if (enc_ret < 0) {
+                    log_warn("UVC: encoder encode failed (MPP decoder path)");
+                } else if (packet.data && packet.size > 0) {
+                    video_send_frame(packet.data, (ssize_t)packet.size);
+                    encoder_packet_free(&packet);
+                }
+                goto requeue;
+            }
+#endif
             unsigned char* mjpg_ptr = (unsigned char*)uvc_buffers[buf.index].start;
             unsigned long mjpg_size = buf.bytesused;
             int flags = 0;
@@ -285,12 +419,18 @@ static void* uvc_thread_main(void* arg) {
                 if (iw != uvc_width || ih != uvc_height) {
                     log_warn("UVC: MJPEG header size %dx%d != requested %dx%d, adapting",
                              iw, ih, uvc_width, uvc_height);
-                    // re-init x264 with new size
                     uvc_width = iw; uvc_height = ih;
-                    if (x264) { x264_encoder_close(x264); x264 = NULL; }
-                    x264_picture_clean(&x_pic_in);
                     if (yuv_buf) { free(yuv_buf); yuv_buf = NULL; }
-                    if (init_x264() < 0) { log_error("UVC: re-init x264 failed"); break; }
+                    
+                    // 重建编码器（统一处理，无论x264还是MPP）
+                    if (encoder && encoder->destroy) {
+                        encoder->destroy(&encoder_ctx);
+                    }
+                    if (init_encoder() < 0) { 
+                        log_error("UVC: re-init encoder failed"); 
+                        break; 
+                    }
+                    
                     video_report_format(true, NULL, (u_int16_t)uvc_width, (u_int16_t)uvc_height, (double)uvc_fps);
                 }
                 if (!yuv_buf) {
@@ -368,33 +508,54 @@ static void* uvc_thread_main(void* arg) {
             yuyv_to_i420(yuyv, uvc_width, uvc_height, Y, U, V, uvc_width, uvc_width/2);
         }
 
-        // Map yuv_buf into x264_picture planes (I420 planar)
-        unsigned char* y = yuv_buf;
-        unsigned char* u = y + (uvc_width * uvc_height);
-        unsigned char* v = u + (uvc_width/2) * (uvc_height/2);
-       
-        x_pic_in.img.plane[0] = y;
-        x_pic_in.img.plane[1] = u;
-        x_pic_in.img.plane[2] = v;
-        x_pic_in.img.i_stride[0] = uvc_width;
-        x_pic_in.img.i_stride[1] = uvc_width/2;
-        x_pic_in.img.i_stride[2] = uvc_width/2;
-
-        x264_nal_t *nals = NULL; int i_nals = 0; x264_picture_t pic_out;
-        int bytes = x264_encoder_encode(x264, &nals, &i_nals, &x_pic_in, &pic_out);
-        if (bytes < 0) {
-            log_warn("UVC: x264_encoder_encode failed");
-        } else if (bytes > 0) {
-            // Concatenate NALs to a single buffer
-            int total = 0; for (int i=0;i<i_nals;i++) total += nals[i].i_payload;
-            unsigned char *out = (unsigned char*)malloc(total);
-            if (out) {
-                int off = 0; for (int i=0;i<i_nals;i++) { memcpy(out+off, nals[i].p_payload, nals[i].i_payload); off += nals[i].i_payload; }
-                video_send_frame(out, (ssize_t)total);
-                free(out);
-            }
+        // 统一编码逻辑
+        // yuv_buf当前包含I420数据，需要根据编码器要求的格式进行转换
+        static unsigned char *encoder_buf = NULL;
+        static size_t encoder_buf_size = 0;
+        size_t frame_size = (size_t)uvc_width * uvc_height * 3 / 2;
+        
+        // 确保编码器buffer足够大
+        if (encoder_buf_size < frame_size) {
+            unsigned char *nb = (unsigned char*)realloc(encoder_buf, frame_size);
+            if (!nb) { log_error("UVC: alloc encoder_buf failed"); break; }
+            encoder_buf = nb; encoder_buf_size = frame_size;
+        }
+        
+        // 根据编码器期望的格式准备数据
+        if (encoder_input_fmt == PIXEL_FORMAT_NV12) {
+            // I420 -> NV12转换
+            unsigned char* y = yuv_buf;
+            unsigned char* u = y + (uvc_width * uvc_height);
+            unsigned char* v = u + (uvc_width/2) * (uvc_height/2);
+            i420_to_nv12(y, u, v, uvc_width, uvc_height, encoder_buf);
+        } else {
+            // I420格式，直接使用
+            memcpy(encoder_buf, yuv_buf, frame_size);
+        }
+        
+        // 准备video_frame
+        video_frame_t frame = {0};
+        frame.data = encoder_buf;
+        frame.size = frame_size;
+        frame.format = encoder_input_fmt;
+        frame.width = uvc_width;
+        frame.height = uvc_height;
+        frame.stride_y = uvc_width;
+        frame.stride_uv = (encoder_input_fmt == PIXEL_FORMAT_NV12) ? uvc_width : (uvc_width / 2);
+        frame.pts_us = 0;
+        
+        // 编码
+        encoded_packet_t packet = {0};
+        int enc_ret = encoder->encode(encoder_ctx, &frame, &packet);
+        if (enc_ret < 0) {
+            log_warn("UVC: encoder encode failed");
+        } else if (packet.data && packet.size > 0) {
+            // 发送编码数据
+            video_send_frame(packet.data, (ssize_t)packet.size);
+            encoder_packet_free(&packet);
         }
 
+requeue:
         if (xioctl(uvc_fd, VIDIOC_QBUF, &buf) < 0) {
             log_error("UVC: VIDIOC_QBUF failed: %s", strerror(errno));
             break;
@@ -417,30 +578,89 @@ int uvc_init_from_env() {
     s = getenv("JETKVM_X264_PRESET"); if (s && s[0]) { strncpy(x264_preset, s, sizeof(x264_preset)-1); }
     s = getenv("JETKVM_X264_TUNE"); if (s && s[0]) { strncpy(x264_tune, s, sizeof(x264_tune)-1); }
     s = getenv("JETKVM_X264_PROFILE"); if (s && s[0]) { strncpy(x264_profile, s, sizeof(x264_profile)-1); }
-    // Encoder selection placeholder: accept "mpp" but fall back to x264 if not available
+    // 编码器选择：通过JETKVM_ENCODER环境变量（"x264" 或 "mpp"）
     s = getenv("JETKVM_ENCODER");
     if (s && s[0]) {
-        if (strcasecmp(s, "mpp") == 0) {
-            log_warn("UVC: encoder=mpp requested but not available in this build; falling back to x264");
-        }
+        encoder_type = encoder_type_from_name(s);
+    } else {
+        encoder_type = ENCODER_TYPE_X264;  // 默认x264
     }
+    log_info("UVC: Selected encoder type: %s", 
+             encoder_type == ENCODER_TYPE_MPP ? "mpp" : "x264");
     
+    // 解码器选择：MJPEG的MPP JPEG解码器或TurboJPEG
+    // 默认：如果编码器是MPP，则解码器也用MPP
+    s = getenv("JETKVM_DECODER");
+    if (s && s[0]) {
+        if (strcasecmp(s, "mpp") == 0) {
+#ifdef JETKVM_HAVE_MPP
+            use_mpp_decoder = 1;
+#else
+            log_warn("UVC: decoder=mpp requested but not enabled at build time; using TurboJPEG");
+#endif
+        } else if (strcasecmp(s, "turbojpeg") == 0) {
+            use_mpp_decoder = 0;
+        }
+    } else {
+        // 默认：编码器是MPP时，解码器也用MPP
+        use_mpp_decoder = (encoder_type == ENCODER_TYPE_MPP);
+    }
 
     if (uvc_open_device() < 0) return -1;
+    
+    // Set format first - this may change uvc_pixfmt if device doesn't support requested format
     if (uvc_set_format() < 0) return -1;
-    if (uvc_init_mmap() < 0) return -1;
+    
+    // Now initialize decoders based on ACTUAL format returned by device
     if (uvc_pixfmt == V4L2_PIX_FMT_MJPEG) {
-        if (init_turbojpeg() < 0) return -1;
-    } else {
+        log_info("UVC: Using MJPEG input format");
+#ifdef JETKVM_HAVE_MPP
+        if (use_mpp_decoder) {
+            log_info("UVC: Using MPP JPEG decoder");
+            if (dec_mppjpeg_init() < 0) {
+                log_error("UVC: Failed to init MPP JPEG decoder");
+                return -1;
+            }
+        } else {
+            log_info("UVC: Using TurboJPEG software decoder");
+            if (init_turbojpeg() < 0) {
+                log_error("UVC: Failed to init TurboJPEG decoder");
+                return -1;
+            }
+        }
+#else
+        log_info("UVC: Using TurboJPEG software decoder");
+        if (init_turbojpeg() < 0) {
+            log_error("UVC: Failed to init TurboJPEG decoder");
+            return -1;
+        }
+#endif
+    } else if (uvc_pixfmt == V4L2_PIX_FMT_YUYV) {
+        log_info("UVC: Using YUYV input format (will convert to I420)");
         // allocate YUV buffer for YUYV conversion
         yuv_buf_size = (size_t)uvc_width * (size_t)uvc_height * 3 / 2;
         yuv_buf = (unsigned char*)malloc(yuv_buf_size);
-        if (!yuv_buf) return -1;
+        if (!yuv_buf) {
+            log_error("UVC: Failed to allocate YUV conversion buffer");
+            return -1;
+        }
+    } else {
+        log_error("UVC: Unsupported pixel format 0x%08X", uvc_pixfmt);
+        return -1;
     }
-    if (init_x264() < 0) return -1;
-    log_info("UVC: initialized device=%s %dx%d@%dfps fmt=%s bitrate=%dkbps",
+    
+    if (uvc_init_mmap() < 0) return -1;
+    
+    // 统一初始化编码器
+    if (init_encoder() < 0) {
+        log_error("UVC: init encoder failed");
+        return -1;
+    }
+    
+    log_info("UVC: initialized device=%s %dx%d@%dfps fmt=%s encoder=%s bitrate=%dkbps",
              uvc_dev_path, uvc_width, uvc_height, uvc_fps,
-             (uvc_pixfmt==V4L2_PIX_FMT_YUYV?"YUYV":"MJPG"), bitrate_kbps);
+             (uvc_pixfmt==V4L2_PIX_FMT_YUYV?"YUYV":"MJPG"),
+             encoder->name, bitrate_kbps);
     return 0;
 }
 
@@ -467,19 +687,44 @@ void uvc_stop_streaming() {
 
 void uvc_shutdown() {
     uvc_stop_streaming();
-    if (x264) { x264_encoder_close(x264); x264 = NULL; }
-    x264_picture_clean(&x_pic_in);
-    if (tj) { tjDestroy(tj); tj = NULL; }
+    
+    // 统一销毁编码器
+    if (encoder && encoder->destroy) {
+        encoder->destroy(&encoder_ctx);
+        encoder = NULL;
+        encoder_ctx = NULL;
+    }
+    
+    // 销毁解码器
+#ifdef JETKVM_HAVE_MPP
+    if (use_mpp_decoder && uvc_pixfmt == V4L2_PIX_FMT_MJPEG) {
+        dec_mppjpeg_deinit();
+    }
+#endif
+    if (tj) { 
+        tjDestroy(tj); 
+        tj = NULL; 
+    }
+    
+    // 释放缓冲区
     if (yuv_buf) { free(yuv_buf); yuv_buf = NULL; }
     if (yuv_src) { free(yuv_src); yuv_src = NULL; }
+    
+    // 关闭V4L2设备
     if (uvc_fd >= 0) {
         enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         xioctl(uvc_fd, VIDIOC_STREAMOFF, &type);
         for (int i = 0; i < uvc_nbufs; i++) {
-            if (uvc_buffers[i].start && uvc_buffers[i].length) munmap(uvc_buffers[i].start, uvc_buffers[i].length);
+            if (uvc_buffers[i].start && uvc_buffers[i].length) {
+                munmap(uvc_buffers[i].start, uvc_buffers[i].length);
+            }
         }
-        free(uvc_buffers); uvc_buffers = NULL; uvc_nbufs = 0;
-        close(uvc_fd); uvc_fd = -1;
+        free(uvc_buffers); 
+        uvc_buffers = NULL; 
+        uvc_nbufs = 0;
+        close(uvc_fd); 
+        uvc_fd = -1;
     }
+    
     log_info("UVC: shutdown completed");
 }
