@@ -1,0 +1,29 @@
+FROM golang:1.24.4-bookworm AS builder
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg \
+      build-essential cmake make ninja-build pkg-config git \
+      libx264-dev libturbojpeg0-dev && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends nodejs && \
+    node -v && npm -v && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+COPY . .
+
+# Build UVC-only native static library (no RK, no LVGL)
+RUN rm -rf internal/native/cgo/build-ninja internal/native/cgo/_stage && \
+    mkdir -p internal/native/cgo/lib && \
+    cmake -S internal/native/cgo -B /tmp/build-native -G Ninja \
+      -DCMAKE_BUILD_TYPE=Release -DUSE_RK=OFF -DUSE_LVGL=OFF && \
+    cmake --build /tmp/build-native -j && \
+    cmake --install /tmp/build-native --prefix internal/native/cgo/_stage && \
+    cp -v internal/native/cgo/_stage/lib/libjknative.a internal/native/cgo/lib/ && \
+    make frontend && \
+    go mod download && \
+    go mod verify && \
+    go build -tags "uvconly netgo timetzdata nomsgpack" -o /out/jetkvm_app ./cmd

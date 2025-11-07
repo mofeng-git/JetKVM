@@ -1,0 +1,85 @@
+{
+    "cloud_url": "https://api.jetkvm.com",
+    "cloud_app_url": "https://app.jetkvm.com",
+    "cloud_token": "",
+    "google_identity": "",
+
+    "jiggler_enabled": false,
+    "jiggler_config": {
+      "inactivity_limit_seconds": 60,
+      "jitter_percentage": 25,
+      "schedule_cron_tab": "0 * * * * *",
+      "timezone": "UTC"
+    },
+
+    "auto_update_enabled": false,
+    "include_pre_release": false,
+    "hashed_password": "",
+    "local_auth_token": "",
+    "localAuthMode": "noPassword",
+    "local_loopback_only": false,
+
+    "wake_on_lan_devices": null,
+    "keyboard_macros": [],
+    "keyboard_layout": "en-US",
+
+    "hdmi_edid_string": "",
+    "active_extension": "",
+
+    "display_rotation": "270",
+    "display_max_brightness": 64,
+    "display_dim_after_sec": 120,
+    "display_off_after_sec": 1800,
+
+    "tls_mode": "",
+
+    "usb_config": {
+      "vendor_id": "0x1d6b",
+      "product_id": "0x0104",
+      "serial_number": "",
+      "manufacturer": "JetKVM",
+      "product": "USB Emulation Device"
+    },
+    "usb_devices": {
+      "absolute_mouse": true,
+      "relative_mouse": true,
+      "keyboard": true,
+      "mass_storage": true
+    },
+
+    "network_config": {
+      "hostname": null,
+      "http_proxy": null,
+      "domain": null,
+      "ipv4_mode": "dhcp",
+      "ipv6_mode": "slaac",
+      "lldp_mode": "enabled",
+      "lldp_tx_tlvs": ["chassis","port","system","vlan"],
+      "mdns_mode": "auto",
+      "time_sync_mode": "http_only",
+      "time_sync_ordering": ["ntp","http"],
+      "time_sync_disable_fallback": false,
+      "time_sync_parallel": 4,
+      "time_sync_skip_rtc": true
+    },
+
+    "default_log_level": "INFO",
+    "video_sleep_after_sec": 0,
+
+    "watchdog_enabled": false,
+
+    "video": {
+      "backend": "uvc",
+      "device": "/dev/video0",
+      "format": "MJPG",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "encoder": "x264",
+      "bitrate_kbps": 2000,
+      "keyint": 60,
+      "repeat_headers": true
+    },
+
+    "usb_udc_override": ""
+  }
