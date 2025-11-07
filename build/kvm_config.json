@@ -76,7 +76,7 @@
       "height": 720,
       "fps": 30,
       "encoder": "x264",
-      "bitrate_kbps": 2000,
+      "bitrate_kbps": 8000,
       "keyint": 60,
       "repeat_headers": true
     },
