@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/prometheus/procfs"
@@ -336,6 +337,12 @@ func (fc *FileChange) getFileChangeResolvedAction() FileChangeResolvedAction {
 				return FileChangeResolvedActionDoNothing
 			}
 			return FileChangeResolvedActionUpdateFile
+		}
+		// If the target file is absent under configfs usb_gadget, it likely means
+		// the attribute is not supported by this kernel. Do not attempt to create
+		// arbitrary files under configfs; just skip gracefully.
+		if strings.HasPrefix(fc.Path, filepath.Join(gadgetPath, "")) {
+			return FileChangeResolvedActionDoNothing
 		}
 		return FileChangeResolvedActionCreateFile
 	case FileStateSymlink:
