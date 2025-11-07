@@ -1,0 +1,195 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - stage-0
+          - dev
+          - release
+      version:
+        description: 'Version tag (for main image)'
+        required: false
+        default: 'latest'
+        type: string
+      platforms:
+        description: 'Target platforms'
+        required: false
+        default: 'linux/arm64,linux/arm/v7'
+        type: string
+      enable_aliyun:
+        description: 'Push to Aliyun Registry'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  DOCKERHUB_REGISTRY: docker.io
+  ALIYUN_REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  STAGE0_IMAGE: jetkvm-stage-0
+  MAIN_IMAGE: jetkvm
+
+jobs:
+  build-stage-0:
+    runs-on: ubuntu-22.04
+    if: github.event.inputs.build_type == 'stage-0'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          platforms: ${{ github.event.inputs.platforms }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKERHUB_REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        if: github.event.inputs.enable_aliyun == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            silentwind0/${{ env.STAGE0_IMAGE }}
+            ${{ github.event.inputs.enable_aliyun == 'true' && format('{0}/silentwind/{1}', env.ALIYUN_REGISTRY, env.STAGE0_IMAGE) || '' }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=latest-{{date 'YYYYMMDD-HHmmss'}}
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=JetKVM Stage-0 Base Image
+            org.opencontainers.image.description=Base image for JetKVM build environment
+            org.opencontainers.image.vendor=JetKVM Project
+
+      - name: Build and push stage-0 image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./build/Dockerfile-stage-0
+          platforms: ${{ github.event.inputs.platforms }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=stage-0
+          cache-to: type=gha,mode=max,scope=stage-0
+          provenance: false
+          sbom: false
+          allow: security.insecure
+
+  build-main:
+    runs-on: ubuntu-22.04
+    if: github.event.inputs.build_type != 'stage-0'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          platforms: ${{ github.event.inputs.platforms }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKERHUB_REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        if: github.event.inputs.enable_aliyun == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Set version tag
+        id: version
+        run: |
+          if [[ "${{ github.event.inputs.build_type }}" == "dev" ]]; then
+            echo "tag=dev" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event.inputs.build_type }}" == "release" ]]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            silentwind0/${{ env.MAIN_IMAGE }}
+            ${{ github.event.inputs.enable_aliyun == 'true' && format('{0}/silentwind/{1}', env.ALIYUN_REGISTRY, env.MAIN_IMAGE) || '' }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.tag }}
+            type=raw,value=${{ steps.version.outputs.tag }}-{{date 'YYYYMMDD-HHmmss'}}
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=JetKVM
+            org.opencontainers.image.description=DIY IP-KVM solution
+            org.opencontainers.image.vendor=JetKVM Project
+            org.opencontainers.image.version=${{ steps.version.outputs.tag }}
+
+      - name: Build and push main image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./build/Dockerfile
+          platforms: ${{ github.event.inputs.platforms }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=main
+          cache-to: type=gha,mode=max,scope=main
+          provenance: false
+          sbom: false
+
+      - name: Build summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Type**: ${{ github.event.inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version Tag**: ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms**: ${{ github.event.inputs.platforms }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Aliyun Enabled**: ${{ github.event.inputs.enable_aliyun }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tags**:" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" | sed 's/^/  - /' >> $GITHUB_STEP_SUMMARY
+
