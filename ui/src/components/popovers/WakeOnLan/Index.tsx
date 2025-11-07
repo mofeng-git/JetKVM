@@ -6,12 +6,14 @@ import { SettingsPageHeader } from "@components/SettingsPageheader";
 import { JsonRpcResponse, useJsonRpc } from "@/hooks/useJsonRpc";
 import { useRTCStore, useUiStore } from "@/hooks/stores";
 import notifications from "@/notifications";
+import { useI18n } from "@/i18n";
 
 import EmptyStateCard from "./EmptyStateCard";
 import DeviceList, { StoredDevice } from "./DeviceList";
 import AddDeviceForm from "./AddDeviceForm";
 
 export default function WakeOnLanModal() {
+  const { t } = useI18n();
   const [storedDevices, setStoredDevices] = useState<StoredDevice[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const { setDisableVideoFocusTrap } = useUiStore();
@@ -35,18 +37,18 @@ export default function WakeOnLanModal() {
         if ("error" in resp) {
           const isInvalid = resp.error.data?.includes("invalid MAC address");
           if (isInvalid) {
-            setErrorMessage("Invalid MAC address");
+            setErrorMessage(t("popovers.wol.notify.invalidMac"));
           } else {
-            setErrorMessage("Failed to send Magic Packet");
+            setErrorMessage(t("popovers.wol.notify.failedSend"));
           }
         } else {
-          notifications.success("Magic Packet sent successfully");
+          notifications.success(t("popovers.wol.notify.sent"));
           setDisableVideoFocusTrap(false);
           close();
         }
       });
     },
-    [close, rpcDataChannel?.readyState, send, setDisableVideoFocusTrap],
+    [close, rpcDataChannel?.readyState, send, setDisableVideoFocusTrap, t],
   );
 
   const syncStoredDevices = useCallback(() => {
@@ -87,14 +89,14 @@ export default function WakeOnLanModal() {
       send("setWakeOnLanDevices", { params: { devices: updatedDevices } }, (resp: JsonRpcResponse) => {
         if ("error" in resp) {
           console.error("Failed to add Wake-on-LAN device:", resp.error);
-          setAddDeviceErrorMessage("Failed to add device");
+          setAddDeviceErrorMessage(t("popovers.wol.notify.failedAdd"));
         } else {
           setShowAddForm(false);
           syncStoredDevices();
         }
       });
     },
-    [send, storedDevices, syncStoredDevices],
+    [send, storedDevices, syncStoredDevices, t],
   );
 
   return (
@@ -103,8 +105,8 @@ export default function WakeOnLanModal() {
         <div className="grid h-full grid-rows-(--grid-headerBody)">
           <div className="space-y-4">
             <SettingsPageHeader
-              title="Wake On LAN"
-              description="Send a Magic Packet to wake up a remote device."
+              title={t("popovers.wol.title")}
+              description={t("popovers.wol.desc")}
             />
 
             {showAddForm ? (

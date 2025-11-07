@@ -7,6 +7,7 @@
 #include <string.h>
 #include <rk_debug.h>
 #include <malloc.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <rk_mpi_mb.h>
 #include <fcntl.h>
@@ -27,8 +28,8 @@
 #include "ctrl.h"
 #include "log.h"
 
-#define VIDEO_DEV "/dev/video0"
-#define SUB_DEV "/dev/v4l-subdev2"
+static char VIDEO_DEV_PATH[256] = "/dev/video0";
+static char SUB_DEV_PATH[256] = "/dev/v4l-subdev2";
 
 #define RK_ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
 #define RK_ALIGN_2(x) RK_ALIGN(x, 2)
@@ -192,6 +193,21 @@ pthread_t *format_thread = NULL;
 
 int video_init()
 {
+    // Allow overriding device paths via environment variables at runtime
+    const char *env_video = getenv("JETKVM_VIDEO_DEV");
+    if (env_video && env_video[0] != '\0') {
+        strncpy(VIDEO_DEV_PATH, env_video, sizeof(VIDEO_DEV_PATH) - 1);
+        VIDEO_DEV_PATH[sizeof(VIDEO_DEV_PATH) - 1] = '\0';
+        log_info("video device overridden by env: %s", VIDEO_DEV_PATH);
+    }
+
+    const char *env_subdev = getenv("JETKVM_SUB_DEV");
+    if (env_subdev && env_subdev[0] != '\0') {
+        strncpy(SUB_DEV_PATH, env_subdev, sizeof(SUB_DEV_PATH) - 1);
+        SUB_DEV_PATH[sizeof(SUB_DEV_PATH) - 1] = '\0';
+        log_info("sub device overridden by env: %s", SUB_DEV_PATH);
+    }
+
     if (RK_MPI_SYS_Init() != RK_SUCCESS)
     {
         log_error("RK_MPI_SYS_Init failed");
@@ -200,13 +216,13 @@ int video_init()
 
     if (sub_dev_fd < 0)
     {
-        sub_dev_fd = open(SUB_DEV, O_RDWR);
+        sub_dev_fd = open(SUB_DEV_PATH, O_RDWR);
         if (sub_dev_fd < 0)
         {
-            log_error("failed to open control sub device %s: %s", SUB_DEV, strerror(errno));
+            log_error("failed to open control sub device %s: %s", SUB_DEV_PATH, strerror(errno));
             return errno;
         }
-        log_info("opened control sub device %s", SUB_DEV);
+        log_info("opened control sub device %s", SUB_DEV_PATH);
     }
 
     int32_t ret = buf_init();
@@ -327,14 +343,14 @@ void *run_video_stream(void *arg)
             continue;
         }
 
-        int video_dev_fd = open(VIDEO_DEV, O_RDWR);
+        int video_dev_fd = open(VIDEO_DEV_PATH, O_RDWR);
         if (video_dev_fd < 0)
         {
             log_error("failed to open video capture device %s: %s", VIDEO_DEV, strerror(errno));
             usleep(1000000);
             continue;
         }
-        log_info("opened video capture device %s", VIDEO_DEV);
+        log_info("opened video capture device %s", VIDEO_DEV_PATH);
 
         uint32_t width = detected_width;
         uint32_t height = detected_height;
@@ -532,7 +548,7 @@ void *run_video_stream(void *arg)
                 log_error("failure VIDIOC_QBUF: %s", strerror(errno));
         }
     cleanup:
-        log_info("cleaning up video capture device %s", VIDEO_DEV);
+        log_info("cleaning up video capture device %s", VIDEO_DEV_PATH);
         if (ioctl(video_dev_fd, VIDIOC_STREAMOFF, &type) < 0)
         {
             log_error("VIDIOC_STREAMOFF failed: %s", strerror(errno));
@@ -548,7 +564,7 @@ void *run_video_stream(void *arg)
             }
         }
 
-        log_info("closing video capture device %s", VIDEO_DEV);
+        log_info("closing video capture device %s", VIDEO_DEV_PATH);
         close(video_dev_fd);
     }
 
@@ -558,6 +574,7 @@ void *run_video_stream(void *arg)
 
 void video_shutdown()
 {
+    // Rockchip-only implementation; UVC-only builds use video_uvconly.c
     if (should_exit == true)
     {
         log_info("shutting down in progress already");
@@ -585,6 +602,7 @@ void video_shutdown()
 
 void video_start_streaming()
 {
+    // Rockchip-only implementation; UVC-only builds use video_uvconly.c
     pthread_mutex_lock(&streaming_mutex);
     if (streaming_thread != NULL)
     {
@@ -618,6 +636,7 @@ cleanup:
 
 void video_stop_streaming()
 {
+    // Rockchip-only implementation; UVC-only builds use video_uvconly.c
     pthread_mutex_lock(&streaming_mutex);
     if (streaming_thread != NULL)
     {

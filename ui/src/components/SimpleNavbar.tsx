@@ -17,7 +17,7 @@ export default function SimpleNavbar({ logoHref, actionElement }: Props) {
               <img src={LogoWhiteIcon} alt="" className="h-[26px] dark:block hidden" />
               <img src={LogoBlueIcon} alt="" className="h-[26px] dark:hidden" />
             </Link>
-            <div>{actionElement}</div>
+            <div className="flex items-center gap-3">{actionElement}</div>
           </div>
         </div>
       </Container>

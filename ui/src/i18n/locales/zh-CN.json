@@ -1,0 +1,759 @@
+{
+  "login": {
+    "titleDevice": "将 JetKVM 连接到云端",
+    "descDevice": "为设备启用远程访问与高级功能",
+    "actionConnect": "登录并连接设备",
+    "ctaNoAccount": "还没有账号？",
+
+    "title": "登录 JetKVM 账户",
+    "desc": "登录以安全地访问和管理你的设备",
+    "actionLogin": "登录",
+    "ctaNew": "初次使用 JetKVM？"
+  },
+  "signup": {
+    "titleDevice": "将 JetKVM 连接到云端",
+    "descDevice": "为设备启用远程访问与高级功能。",
+    "actionConnect": "注册并连接设备",
+    "ctaHave": "已经有账号？",
+    "title": "创建你的 JetKVM 账户",
+    "desc": "创建账户，轻松开始管理你的设备。",
+    "actionCreate": "创建账户"
+  },
+  "header": {
+    "loggedInAs": "当前登录",
+    "logout": "退出登录"
+  },
+  "appearance": {
+    "title": "外观",
+    "desc": "自定义 JetKVM 的界面风格",
+    "themeTitle": "主题",
+    "themeDesc": "选择你偏好的配色主题",
+    "theme": {
+      "system": "跟随系统",
+      "light": "浅色",
+      "dark": "深色"
+    },
+    "languageTitle": "语言",
+    "languageDesc": "选择界面语言",
+    "language": {
+      "en": "英文",
+      "zhCN": "简体中文"
+    }
+  },
+  "loginLocal": {
+    "title": "欢迎回到 JetKVM",
+    "desc": "请输入密码以访问你的 JetKVM。",
+    "password": "密码",
+    "placeholder": "请输入密码",
+    "signIn": "登录",
+    "forgot": "忘记密码？"
+  },
+  "common": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "close": "关闭",
+    "back": "返回",
+    "continue": "继续",
+    "previous": "上一页",
+    "next": "下一页",
+    "delete": "删除",
+    "select": "选择",
+    "learnMore": "了解更多",
+    "tryAgain": "重试",
+    "troubleshootingGuide": "故障排查指南"
+  },
+  "devices": {
+    "navCloud": "云端设备",
+    "defaultDeviceName": "JetKVM 设备",
+    "title": "云端 KVM",
+    "desc": "管理你的云端 KVM 并安全连接。",
+    "empty": {
+      "headline": "未找到设备",
+      "desc": "你还没有启用 JetKVM Cloud 的设备。"
+    },
+    "deregister": {
+      "back": "返回设备列表",
+      "headline": "将 {name} 从云端账户注销",
+      "desc": "这将把设备从你的云端账户中移除，并撤销其远程访问权限。\n注意：仍可通过本地方式访问",
+      "cancel": "取消",
+      "submit": "从云端注销",
+      "error": "注销设备时发生错误，请重试。"
+    }
+  },
+  "settings": {
+    "backToKvm": "返回 KVM",
+    "nav": {
+      "general": "通用",
+      "mouse": "鼠标",
+      "keyboard": "键盘",
+      "video": "视频",
+      "hardware": "硬件",
+      "access": "访问",
+      "appearance": "外观",
+      "macros": "按键宏",
+      "network": "网络",
+      "advanced": "高级"
+    },
+    "general": {
+      "title": "通用",
+      "desc": "配置设备设置与更新偏好",
+      "checkUpdates": "检查更新",
+      "app": "应用",
+      "system": "系统",
+      "loading": "加载中...",
+      "autoUpdate": "自动更新",
+      "autoUpdateDesc": "自动将设备更新到最新版本",
+      "reboot": "重启设备",
+      "rebootDesc": "对 JetKVM 进行断电重启",
+      "setAutoUpdateFailed": "设置自动更新失败：{reason}"
+    }
+    ,
+    "mouse": {
+      "title": "鼠标",
+      "desc": "配置设备的光标行为与交互设置",
+      "hideCursorTitle": "隐藏光标",
+      "hideCursorDesc": "发送鼠标移动时隐藏本地光标",
+      "scrollTitle": "滚动节流",
+      "scrollDesc": "降低滚动事件的频率",
+      "scroll": {"off": "关闭", "low": "低", "medium": "中", "high": "高", "veryHigh": "很高"},
+      "jigglerTitle": "防休眠移动",
+      "jigglerDesc": "模拟鼠标移动以防休眠",
+      "preset": {
+        "disabled": "已关闭",
+        "frequent": "频繁 - 30秒",
+        "standard": "标准 - 1分钟",
+        "light": "轻度 - 5分钟",
+        "custom": "自定义"
+      },
+      "modesTitle": "模式",
+      "modesDesc": "选择鼠标输入模式",
+      "absolute": {"title": "绝对", "subtitle": "最便捷"},
+      "relative": {"title": "相对", "subtitle": "兼容性最佳"},
+      "notify": {
+        "setStateFail": "设置防休眠状态失败：{reason}",
+        "invalidCron": "无效的 Cron 表达式。请检查格式（例如每分钟：'0 * * * * *'）。",
+        "setConfigFail": "设置防休眠配置失败：{reason}",
+        "configUpdated": "防休眠配置已更新",
+        "setConfigError": "设置防休眠配置时出错"
+      }
+    },
+    "keyboard": {
+      "title": "键盘",
+      "desc": "配置设备的键盘设置",
+      "layoutTitle": "键盘布局",
+      "layoutDesc": "目标操作系统的键盘布局",
+      "info": "虚拟键盘、粘贴文本和按键宏会向目标设备发送逐个按键。键盘布局决定发送哪些键码。请确保 JetKVM 中的键盘布局与操作系统设置一致。",
+      "showPressedTitle": "显示按下的按键",
+      "showPressedDesc": "在状态栏显示当前按下的按键",
+      "notify": {
+        "setLayoutFail": "设置键盘布局失败：{reason}",
+        "setLayoutOk": "键盘布局已设置为 {iso}"
+      }
+    },
+    "video": {
+      "title": "视频",
+      "desc": "配置显示与 EDID 以获得最佳兼容性",
+      "streamQualityTitle": "码流质量",
+      "streamQualityDesc": "调整视频流质量",
+      "quality": {"high": "高", "medium": "中", "low": "低"},
+      "enhanceTitle": "画质增强",
+      "enhanceDesc": "调整颜色使画面更鲜艳",
+      "saturation": "饱和度",
+      "saturationDesc": "颜色饱和度（{x}x）",
+      "brightness": "亮度",
+      "brightnessDesc": "亮度（{x}x）",
+      "contrast": "对比度",
+      "contrastDesc": "对比度（{x}x）",
+      "reset": "重置为默认",
+      "edidTitle": "EDID",
+      "edidDesc": "调整显示 EDID 设置",
+      "edidCustomTitle": "自定义 EDID",
+      "edidCustomDesc": "EDID 描述视频模式兼容性。默认设置适用于大多数情况，但某些 UEFI/BIOS 可能需要调整。",
+      "edidFileLabel": "EDID 文件",
+      "edidFilePlaceholder": "00F...",
+      "edidSetCustom": "设置自定义 EDID",
+      "edidRestore": "恢复默认",
+      "debugTitle": "调试信息",
+      "debugDesc": "视频调试信息",
+      "debugGet": "获取调试信息",
+      "notify": {
+        "getEdidFail": "获取 EDID 失败：{reason}",
+        "setQualityFail": "设置码流质量失败：{reason}",
+        "setQualityOk": "码流质量已设为 {label}",
+        "setEdidFail": "设置 EDID 失败：{reason}",
+        "setEdidOk": "EDID 设置成功"
+      }
+    },
+    "hardware": {
+      "title": "硬件",
+      "desc": "配置 JetKVM 设备的显示与硬件选项",
+      "rotationTitle": "显示方向",
+      "rotationDesc": "设置显示方向",
+      "rotation": {"normal": "正常", "inverted": "倒置"},
+      "brightnessTitle": "显示亮度",
+      "brightnessDesc": "设置显示亮度",
+      "brightness": {"off": "关闭", "low": "低", "medium": "中", "high": "高"},
+      "dimTitle": "多久后调暗",
+      "dimDesc": "设置在调暗显示前等待时间",
+      "offTitle": "多久后关闭",
+      "offDesc": "无操作后自动关闭显示的时间",
+      "time": {"never": "从不", "1m": "1 分钟", "5m": "5 分钟", "10m": "10 分钟", "30m": "30 分钟", "1h": "1 小时"},
+      "wakeInfo": "当连接状态变化或触摸屏幕时，显示将被唤醒。",
+      "notify": {
+        "getBacklightFail": "获取背光设置失败：{reason}",
+        "setBacklightFail": "设置背光失败：{reason}",
+        "setBacklightOk": "背光设置已更新",
+        "setRotationFail": "设置显示方向失败：{reason}",
+        "setRotationOk": "显示方向已更新"
+      }
+    },
+    "access": {
+      "title": "访问",
+      "desc": "管理设备访问控制",
+      "localTitle": "本地",
+      "localDesc": "管理本地访问模式",
+      "httpsTitle": "HTTPS 模式",
+      "httpsBadge": "实验性",
+      "httpsDesc": "为设备配置安全的 HTTPS 访问",
+      "httpsOptions": {"disabled": "关闭", "self": "自签名", "custom": "自定义"},
+      "tlsCertTitle": "TLS 证书",
+      "tlsCertDesc": "在下方粘贴 TLS 证书。若为证书链，请包含整链（叶子/中间/根证书）。",
+      "certLabel": "证书",
+      "certPlaceholder": "-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----",
+      "keyLabel": "私钥",
+      "keyDesc": "出于安全考虑，保存后将不会显示。",
+      "keyPlaceholder": "-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----",
+      "updateTls": "更新 TLS 设置",
+      "authModeTitle": "认证模式",
+      "authModeCurr": "当前模式：{mode}",
+      "authPasswordProtected": "密码保护",
+      "authNoPassword": "无密码",
+      "disableProtection": "关闭保护",
+      "enablePassword": "启用密码",
+      "changePassword": "修改密码",
+      "changePasswordDesc": "更新设备访问密码",
+      "remoteTitle": "远程",
+      "remoteDesc": "管理设备的远程访问模式",
+      "cloudProviderTitle": "云服务提供商",
+      "cloudProviderDesc": "选择设备使用的云服务",
+      "cloudProvider": {"jetkvm": "JetKVM Cloud", "custom": "自定义"},
+      "cloudApiUrl": "Cloud API 地址",
+      "cloudAppUrl": "Cloud App 地址",
+      "cloudApiPlaceholder": "https://api.example.com",
+      "cloudAppPlaceholder": "https://app.example.com",
+      "cloudSecurityTitle": "云端安全",
+      "cloudSecurityBullets": "通过 WebRTC（DTLS 与 SRTP）端到端加密\n零信任安全模型\nOIDC（OpenID Connect）认证\n所有流量在传输中加密",
+      "cloudSecurityOpen": "所有云端组件均开源并在 GitHub 提供。",
+      "cloudSecurityLearn": "了解我们的云安全",
+      "adoptKvm": "将 KVM 接入云端",
+      "adopted": "设备已接入云端",
+      "deregister": "从云端注销",
+      "confirmDeregister": "确定要从云端注销此设备吗？",
+      "noDeviceId": "没有可用的设备 ID",
+      "notify": {
+        "deregisterFail": "注销设备失败：{reason}",
+        "updateTlsFail": "更新 TLS 设置失败：{reason}",
+        "updateTlsOk": "TLS 设置已更新",
+        "updateCloudUrlFail": "更新云端地址失败：{reason}"
+      },
+      "localAuth": {
+        "createTitle": "本地设备保护",
+        "createDesc": "创建密码，防止未授权的本地访问。",
+        "newPassword": "新密码",
+        "confirmNewPassword": "确认新密码",
+        "placeholderNew": "请输入强密码",
+        "placeholderConfirm": "请再次输入密码",
+        "secureDevice": "保护设备",
+        "notNow": "暂不",
+        "deleteTitle": "关闭本地设备保护",
+        "deleteDesc": "输入当前密码以关闭本地设备保护。",
+        "currentPassword": "当前密码",
+        "placeholderCurrent": "请输入当前密码",
+        "disableProtection": "关闭保护",
+        "cancel": "取消",
+        "updateTitle": "修改本地设备密码",
+        "updateDesc": "输入当前密码与新密码以更新本地设备保护。",
+        "updatePassword": "更新密码",
+        "close": "关闭"
+      }
+    },
+    "network": {
+      "title": "网络",
+      "desc": "配置网络设置",
+      "macTitle": "MAC 地址",
+      "macDesc": "网络接口的硬件标识",
+      "hostnameTitle": "主机名",
+      "hostnameDesc": "网络中的设备识别名。留空使用系统默认",
+      "hostnamePlaceholder": "jetkvm",
+      "proxyTitle": "HTTP 代理",
+      "proxyDesc": "设备发起的 HTTP(S) 出站请求所用代理。留空表示无",
+      "proxyPlaceholder": "http://proxy.example.com:8080/",
+      "domainTitle": "域名后缀",
+      "domainDesc": "设备的网络域名后缀",
+      "domain": {"dhcp": "DHCP 提供", "local": ".local", "custom": "自定义", "customLabel": "自定义域名", "customPlaceholder": "home"},
+      "mdnsTitle": "mDNS",
+      "mdnsDesc": "控制 mDNS（多播 DNS）的运行模式",
+      "mdnsOptions": {"disabled": "关闭", "auto": "自动", "ipv4": "仅 IPv4", "ipv6": "仅 IPv6"},
+      "timeTitle": "时间同步",
+      "timeDesc": "配置时间同步设置",
+      "timeOptions": {"ntp_only": "仅 NTP", "ntp_and_http": "NTP 与 HTTP", "http_only": "仅 HTTP"},
+      "save": "保存设置",
+      "ipv4Title": "IPv4 模式",
+      "ipv4Desc": "配置 IPv4 模式",
+      "ipv6Title": "IPv6 模式",
+      "ipv6Desc": "配置 IPv6 模式",
+      "ipv6InfoTitle": "IPv6 信息",
+      "ipv6InfoDesc": "未配置 IPv6 地址",
+      "lldpTitle": "LLDP",
+      "lldpDesc": "控制链路层发现协议要发送的 TLV",
+      "lldpOptions": {"disabled": "关闭", "basic": "基础", "all": "全部"},
+      "leaseTitle": "DHCP 租约信息",
+      "leaseEmptyTitle": "DHCP 信息",
+      "leaseEmptyDesc": "暂无 DHCP 租约信息",
+      "confirmRenewTitle": "续租 DHCP 租约",
+      "confirmRenewDesc": "这将向 DHCP 服务器请求新的 IP。过程中设备网络可能短暂中断。",
+      "confirmRenew": "续租",
+      "lifeTimeNA": "N/A",
+      "lifeTimeFmt": "({date})"
+    },
+    "macros": {
+      "title": "按键宏",
+      "desc": "将多次按键合成为一次操作以提升效率。",
+      "add": "新增宏",
+      "maxReached": "已达上限",
+      "loading": "正在加载宏...",
+      "emptyTitle": "创建你的第一个宏",
+      "emptyDesc": "将多次按键合成为一次操作",
+      "delayOnly": "仅延迟",
+      "edit": "编辑",
+      "delete": "删除",
+      "deleteTitle": "删除宏",
+      "deleteConfirm": "确定要删除“{name}”吗？此操作不可撤销。",
+      "deleting": "正在删除...",
+      "notify": {
+        "invalid": "宏数据无效",
+        "max": "最多允许 {max} 个宏",
+        "dupOk": "宏“{name}”复制成功",
+        "dupFail": "复制宏失败：{reason}",
+        "dupFailGeneric": "复制宏失败",
+        "orderOk": "宏顺序已更新",
+        "orderFail": "调整顺序失败：{reason}",
+        "orderFailGeneric": "调整顺序失败"
+      },
+      "addPage": {
+        "title": "新增宏",
+        "desc": "创建一个新的按键宏",
+        "createOk": "宏“{name}”创建成功",
+        "createFail": "创建宏失败：{reason}",
+        "createFailGeneric": "创建宏失败"
+      },
+      "editPage": {
+        "title": "编辑宏",
+        "desc": "修改你的按键宏",
+        "deleteBtn": "删除宏",
+        "save": "保存更改",
+        "updateOk": "宏“{name}”已更新",
+        "updateFail": "更新宏失败：{reason}",
+        "updateFailGeneric": "更新宏失败",
+        "deleteOk": "宏“{name}”已删除",
+        "deleteFail": "删除宏失败：{reason}",
+        "deleteFailGeneric": "删除宏失败",
+        "deleteTitle": "删除宏",
+        "deleteDesc": "确定要删除此宏吗？此操作不可撤销。",
+        "deleting": "正在删除"
+      }
+    },
+    "update": {
+      "checking": "正在检查更新...",
+      "checkingDesc": "我们正在确保你的设备具有最新特性与改进。",
+      "cancel": "取消",
+      "updatingTitle": "正在更新设备",
+      "updatingDesc": "请不要关闭设备，过程可能需要几分钟。",
+      "rebooting": "正在重启以完成更新...",
+      "system": "系统",
+      "app": "应用",
+      "linuxSystem": "Linux 系统更新",
+      "appUpdate": "应用更新",
+      "fetching": "正在获取更新信息...",
+      "downloading": "正在下载{type}更新...",
+      "verifying": "正在校验{type}更新...",
+      "installing": "正在安装{type}更新...",
+      "awaitingReboot": "等待重启",
+      "bg": "后台更新",
+      "uptodateTitle": "系统已是最新",
+      "uptodateDesc": "系统正在运行最新版，暂无可用更新。",
+      "checkAgain": "重新检查",
+      "back": "返回",
+      "availableTitle": "发现可用更新",
+      "availableDesc": "检测到新版本可提升性能与兼容性。推荐尽快更新以保证稳定运行。",
+      "availableSystem": "系统：",
+      "availableApp": "应用：",
+      "updateNow": "立即更新",
+      "later": "稍后再说",
+      "completedTitle": "更新已完成",
+      "completedDesc": "设备已成功更新至最新版本，尽情体验新特性吧！",
+      "errorTitle": "更新出错",
+      "errorDesc": "更新过程中出现错误，请稍后重试。",
+      "errorDetails": "错误详情：{msg}",
+      "retry": "重试"
+    },
+    "reboot": {"title": "重启 JetKVM", "desc": "确定要重启系统吗？", "yes": "是", "no": "否"}
+  },
+  "status": {
+    "usbTitle": "USB",
+    "usb": {
+      "configured": "已连接",
+      "attached": "连接中",
+      "addressed": "连接中",
+      "notAttached": "未连接",
+      "suspended": "低功耗模式"
+    },
+    "peerTitle": "JetKVM 设备",
+    "peer": {
+      "connected": "已连接",
+      "connecting": "连接中",
+      "disconnected": "已断开",
+      "error": "连接错误",
+      "closing": "关闭中",
+      "failed": "连接失败",
+      "closed": "已关闭",
+      "new": "连接中"
+    }
+  },
+  "overlays": {
+    "loadingVideo": "正在加载视频流...",
+    "connectingToDevice": "正在连接设备...",
+    "settingRemoteDescription": "正在设置远端描述",
+    "establishingSecureConnection": "正在建立安全连接...",
+    "connectionEstablished": "连接已建立",
+    "gettingRemoteSessionDescription": "正在获取远端会话描述... {attempt}",
+    "connectionIssue": {
+      "title": "检测到连接问题",
+      "list": "确认设备已通电并正确连接\n检查所有线缆连接是否松动或损坏\n确保你的网络连接稳定可用\n尝试重启设备和你的计算机"
+    },
+    "retrying": "正在重试连接...",
+    "hdmi": {
+      "noSignalTitle": "未检测到 HDMI 信号。",
+      "noSignalList": "确保 HDMI 线两端连接牢固\n确保信号源设备已开机并输出信号\n若使用转接器，请确认其兼容且工作正常",
+      "errorTitle": "检测到 HDMI 信号错误。",
+      "errorList": "HDMI 连接松动或故障\n分辨率或刷新率设置不兼容\n信号源设备的 HDMI 输出存在问题"
+    },
+    "autoplay": {
+      "title": "需要自动播放权限",
+      "button": "手动开始播放",
+      "desc": "请调整浏览器设置以启用自动播放"
+    },
+    "pointer": {
+      "enableMouse": "点击视频以启用鼠标控制"
+    }
+  },
+  "notFound": {
+    "title": "未找到",
+    "desc": "你访问的页面不存在。"
+  },
+  "kvm": {
+    "actionbar": {
+      "webTerminal": "网页终端",
+      "pasteText": "粘贴文本",
+      "virtualMedia": "虚拟介质",
+      "virtualKeyboard": "虚拟键盘",
+      "connectionStats": "连接统计",
+      "settings": "设置",
+      "fullscreen": "全屏",
+      "extension": "扩展",
+      "wakeOnLan": "局域网唤醒"
+    }
+  },
+  "popovers": {
+    "paste": {
+      "title": "粘贴文本",
+      "desc": "将本机文本粘贴到远端主机",
+      "label": "从本机粘贴",
+      "invalidPrefix": "以下字符将无法粘贴：",
+      "delayLabel": "按键间延迟",
+      "delayPlaceholder": "按键间延迟",
+      "delayError": "延迟必须在 50 到 65534 之间",
+      "layoutInfo": "当前键盘布局：{iso}-{name}",
+      "confirm": "确认粘贴",
+      "notify": {"failed": "粘贴文本失败"}
+    },
+
+    "mount": {
+      "title": "虚拟介质",
+      "desc": "挂载镜像以启动或安装操作系统。",
+      "emptyTitle": "尚未挂载介质",
+      "emptyDesc": "添加一个文件以开始",
+      "httpTitle": "从 URL 流式传输",
+      "storageTitle": "从 JetKVM 存储挂载",
+      "mountedAs": "挂载为",
+      "modeDisk": "磁盘",
+      "modeCdrom": "光驱",
+      "close": "关闭",
+      "unmount": "卸载",
+      "add": "添加介质",
+      "notify": {
+        "getStateFail": "获取虚拟介质状态失败：{reason}",
+        "unmountFail": "卸载镜像失败：{reason}"
+      }
+    },
+
+    "extensions": {
+      "title": "扩展",
+      "desc": "加载并管理你的扩展",
+      "load": "加载",
+      "unload": "卸载扩展",
+      "notify": {
+        "setActiveFail": "设置当前扩展失败：{reason}",
+        "unknown": "未知错误"
+      },
+      "available": {
+        "atxPower": {
+          "name": "ATX 电源控制",
+          "desc": "控制你的 ATX 电源扩展"
+        },
+        "dcPower": {
+          "name": "DC 电源控制",
+          "desc": "控制你的 DC 电源扩展"
+        },
+        "serialConsole": {
+          "name": "串口控制台",
+          "desc": "访问你的串口扩展"
+        }
+      }
+    },
+
+    "wol": {
+      "title": "Wake On LAN",
+      "desc": "发送魔术包唤醒远端设备。",
+      "empty": {
+        "noDevices": "尚未添加设备",
+        "addHint": "添加一个设备以开始使用 Wake‑on‑LAN"
+      },
+      "actions": {
+        "close": "关闭",
+        "add": "添加新设备"
+      },
+      "list": {
+        "wake": "唤醒",
+        "deleteAria": "删除设备"
+      },
+      "form": {
+        "deviceName": "设备名称",
+        "placeholderName": "Plex 媒体服务器",
+        "mac": "MAC 地址",
+        "placeholderMac": "00:b0:d0:63:c2:26",
+        "back": "返回",
+        "save": "保存设备"
+      },
+      "notify": {
+        "invalidMac": "无效的 MAC 地址",
+        "failedSend": "发送魔术包失败",
+        "sent": "魔术包发送成功",
+        "failedAdd": "添加设备失败",
+        "failedUpdate": "更新 WOL 设备失败",
+        "loadFail": "加载 WOL 设备失败"
+      }
+    }
+  },
+  "terminal": {
+    "hide": "隐藏",
+    "kvmTitle": "KVM 终端",
+    "serialTitle": "串口控制台"
+  },
+  "sidebar": { "hide": "隐藏" },
+  "virtualKeyboard": {
+    "title": "虚拟键盘",
+    "hide": "隐藏",
+    "attach": "固定",
+    "detach": "浮动"
+  },
+  "infobar": {
+    "resolution": "分辨率：",
+    "videoSize": "视频尺寸：",
+    "pointer": "指针：",
+    "lastMove": "最近移动：",
+    "usbState": "USB 状态：",
+    "hdmiState": "HDMI 状态：",
+    "hidrpcState": "HidRPC 状态：",
+    "pasteMode": "粘贴模式：",
+    "enabled": "已启用",
+    "keys": "按键：",
+    "relayed": "由 Cloudflare 中继",
+    "caps": "大写锁定",
+    "num": "数字锁定",
+    "scroll": "滚动锁定",
+    "compose": "合成",
+    "kana": "假名",
+    "shift": "Shift",
+    "na": "N/A"
+  },
+  "deviceCard": {
+    "online": "在线",
+    "lastOnline": "上次在线 {time}",
+    "neverOnline": "从未在线",
+    "connect": "连接到 KVM",
+    "troubleshoot": "连接疑难解答",
+    "rename": "重命名",
+    "deregister": "从云端注销"
+  },
+  "stats": {
+    "sidebarTitle": "连接统计",
+    "connection": {
+      "title": "连接",
+      "desc": "客户端与 JetKVM 之间的连接。",
+      "rtt": "往返时延",
+      "rttDesc": "对等端之间活动 ICE 候选对的往返时延。"
+    },
+    "video": {
+      "title": "视频",
+      "desc": "JetKVM 到客户端的视频流。",
+      "jitterTitle": "网络稳定性",
+      "jitterBadge": "抖动",
+      "jitterDesc": "入站视频数据包在网络中的平稳程度。",
+      "playbackDelayTitle": "播放延迟",
+      "playbackDelayDesc": "为平滑不均匀到达的帧而由抖动缓冲添加的延迟。",
+      "playbackDelayBadge": "抖动缓冲平均延迟",
+      "packetsLost": "丢包",
+      "packetsLostDesc": "入站视频 RTP 数据包的丢失数量。",
+      "fps": "帧率",
+      "fpsDesc": "每秒显示的入站视频帧数。"
+    },
+    "units": {
+      "ms": " ms",
+      "packets": " 个",
+      "fps": " fps"
+    }
+  }
+  ,
+  "mount": {
+    "common": { "backToOverview": "返回概览" },
+    "source": {
+      "title": "虚拟介质来源",
+      "desc": "选择你希望挂载虚拟介质的方式",
+      "url": {
+        "label": "通过 URL 挂载",
+        "desc": "从任何公网地址挂载文件",
+        "tag": "实验功能"
+      },
+      "storage": {
+        "label": "从 JetKVM 存储挂载",
+        "desc": "从 JetKVM 存储中挂载已上传文件"
+      }
+    },
+    "url": {
+      "title": "从 URL 挂载",
+      "desc": "输入镜像文件的 URL 以进行挂载",
+      "imageUrl": "镜像 URL",
+      "placeholder": "https://example.com/image.iso",
+      "mountButton": "挂载 URL",
+      "popular": {
+        "title": "常用镜像",
+        "netbootDesc": "通过网络引导并安装多种操作系统"
+      }
+    },
+    "storage": {
+      "title": "从 JetKVM 存储挂载",
+      "desc": "从 JetKVM 存储中选择一个镜像进行挂载",
+      "empty": {
+        "title": "暂无可用镜像",
+        "desc": "上传一个镜像以开始虚拟介质挂载。"
+      },
+      "uploadNew": "上传新镜像",
+      "mountButton": "挂载文件",
+      "pagination": "显示第 {from}-{to} 项，共 {total} 项",
+      "available": {
+        "title": "可用存储",
+        "percentUsed": "已用 {percent}%",
+        "used": "已用 {size}",
+        "free": "可用 {size}"
+      },
+      "continueUploading": "继续上传",
+      "confirmDelete": "确定删除 {name} 吗？",
+      "notify": {
+        "listError": "列出存储文件失败：{reason}",
+        "spaceError": "获取存储空间失败：{reason}",
+        "deleteError": "删除文件失败：{reason}"
+      }
+    },
+    "upload": {
+      "title": "上传新镜像",
+      "descDefault": "选择一个镜像文件上传至 JetKVM 存储",
+      "descContinue": "继续上传“{name}”",
+      "clickToSelect": "点击选择文件",
+      "clickToSelectSpecific": "点击选择“{name}”",
+      "supported": "支持的格式：{formats}",
+      "uploading": "正在上传 {name}",
+      "uploadingEllipsis": "正在上传...",
+      "calculating": "计算中...",
+      "successTitle": "上传成功",
+      "successDesc": "{name} 已上传",
+      "errorPrefix": "错误：{msg}",
+      "cancel": "取消上传",
+      "notify": {
+        "createChannelFail": "创建上传数据通道失败",
+        "uploadFail": "上传失败：{reason}",
+        "xhrError": "上传失败：{reason}"
+      }
+    },
+    "usbMode": {
+      "label": "挂载为",
+      "cd": "CD/DVD",
+      "disk": "磁盘"
+    },
+    "error": {
+      "title": "挂载出错",
+      "desc": "挂载介质时发生错误，请重试。"
+    }
+  },
+  "extensions": {
+    "common": { "unknown": "未知错误" },
+    "atx": {
+      "title": "ATX 电源控制",
+      "desc": "控制 ATX 电源相关操作",
+      "power": "电源键",
+      "reset": "重置",
+      "powerLed": "电源指示灯",
+      "hddLed": "硬盘指示灯",
+      "notify": {
+        "getStateFail": "获取 ATX 状态失败：{reason}",
+        "actionFail": "发送 ATX 操作失败：{reason}"
+      }
+    },
+    "dc": {
+      "title": "直流电源控制",
+      "desc": "控制直流电源设置",
+      "powerOn": "上电",
+      "powerOff": "断电",
+      "restoreLabel": "断电恢复策略",
+      "restore": {
+        "off": "上电后保持关闭",
+        "on": "上电后自动开启",
+        "last": "恢复至断电前状态"
+      },
+      "voltage": "电压",
+      "current": "电流",
+      "power": "功率",
+      "notify": {
+        "getStateFail": "获取直流电源状态失败：{reason}",
+        "setStateFail": "设置直流电源状态失败：{reason}",
+        "setRestoreFail": "设置恢复策略失败：{reason}"
+      }
+    },
+    "serial": {
+      "title": "串口控制台",
+      "desc": "配置串口控制台参数",
+      "open": "打开控制台",
+      "baudRate": "波特率",
+      "dataBits": "数据位",
+      "stopBits": "停止位",
+      "parity": "校验位",
+      "parityNone": "无",
+      "parityEven": "偶",
+      "parityOdd": "奇",
+      "notify": {
+        "getSettingsFail": "获取串口设置失败：{reason}",
+        "updateSettingsFail": "更新串口设置失败：{reason}"
+      }
+    }
+  }
+}

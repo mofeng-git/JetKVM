@@ -5,6 +5,7 @@ import { LuEllipsisVertical } from "react-icons/lu";
 
 import Card from "@components/Card";
 import { Button, LinkButton } from "@components/Button";
+import { useI18n } from "@/i18n";
 
 function getRelativeTimeString(date: Date | number, lang = navigator.language): string {
   // Allow dates or times to be passed
@@ -50,6 +51,7 @@ export default function KvmCard({
   online: boolean;
   lastSeen: Date | null;
 }) {
+  const { t } = useI18n();
   return (
     <Card>
       <div className="px-5 py-5 space-y-3">
@@ -62,16 +64,16 @@ export default function KvmCard({
             {online ? (
               <div className="flex items-center gap-x-1.5">
                 <div className="h-2.5 w-2.5 rounded-full border border-green-600 bg-green-500" />
-                <div className="text-sm text-black dark:text-white">Online</div>
+                <div className="text-sm text-black dark:text-white">{t("deviceCard.online")}</div>
               </div>
             ) : (
               <div className="flex items-center gap-x-1.5">
                 <div className="h-2.5 w-2.5 rounded-full border border-slate-400/60 dark:border-slate-500 bg-slate-200 dark:bg-slate-600" />
                 <div className="text-sm text-black dark:text-white">
                   {lastSeen ? (
-                    <>Last online {getRelativeTimeString(lastSeen)}</>
+                    <>{t("deviceCard.lastOnline", { time: getRelativeTimeString(lastSeen) })}</>
                   ) : (
-                    <>Never seen online</>
+                    <>{t("deviceCard.neverOnline")}</>
                   )}
                 </div>
               </div>
@@ -85,7 +87,7 @@ export default function KvmCard({
               <LinkButton
                 size="MD"
                 theme="light"
-                text="Connect to KVM"
+                text={t("deviceCard.connect")}
                 LeadingIcon={MdConnectWithoutContact}
                 textAlign="center"
                 to={`/devices/${id}`}
@@ -94,7 +96,7 @@ export default function KvmCard({
               <Button
                 size="MD"
                 theme="light"
-                text="Troubleshoot Connection"
+                text={t("deviceCard.troubleshoot")}
                 textAlign="center"
               />
             )}
@@ -120,7 +122,7 @@ export default function KvmCard({
                             className="block w-full py-1.5 text-black dark:text-white"
                             to={`./${id}/rename`}
                           >
-                            Rename
+                            {t("deviceCard.rename")}
                           </Link>
                         </div>
                       </div>
@@ -134,7 +136,7 @@ export default function KvmCard({
                             className="block w-full py-1.5 text-black dark:text-white"
                             to={`./${id}/deregister`}
                           >
-                            Deregister from cloud
+                            {t("deviceCard.deregister")}
                           </Link>
                         </div>
                       </div>

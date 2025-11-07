@@ -3,6 +3,7 @@ import { useCallback } from "react";
 
 import { useJsonRpc } from "@/hooks/useJsonRpc";
 import { Button } from "@components/Button";
+import { useI18n } from "@/i18n";
 
 export default function SettingsGeneralRebootRoute() {
   const navigate = useNavigate();
@@ -46,19 +47,20 @@ function ConfirmationBox({
   onYes: () => void;
   onNo: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
       <div className="text-left">
         <p className="text-base font-semibold text-black dark:text-white">
-          Reboot JetKVM
+          {t("settings.reboot.title")}
         </p>
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Do you want to proceed with rebooting the system?
+          {t("settings.reboot.desc")}
         </p>
 
         <div className="mt-4 flex gap-x-2">
-          <Button size="SM" theme="light" text="Yes" onClick={onYes} />
-          <Button size="SM" theme="blank" text="No" onClick={onNo} />
+          <Button size="SM" theme="light" text={t("settings.reboot.yes")} onClick={onYes} />
+          <Button size="SM" theme="blank" text={t("settings.reboot.no")} onClick={onNo} />
         </div>
       </div>
     </div>

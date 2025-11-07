@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { useI18n } from "@/i18n";
 import { cx } from "@/cva.config";
 import { AvailableSidebarViews } from "@/hooks/stores";
 
@@ -17,7 +18,7 @@ export default function SidebarHeader({
       <Button
         size="XS"
         theme="blank"
-        text="Hide"
+        text={useI18n().t("sidebar.hide")}
         LeadingIcon={({ className }) => (
           <svg
             className={cx(className, "rotate-180")}

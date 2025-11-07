@@ -17,6 +17,7 @@ import api from "../api";
 import { isOnDevice } from "../main";
 
 import { LinkButton } from "./Button";
+import { useI18n } from "@/i18n";
 
 interface NavbarProps {
   isLoggedIn: boolean;
@@ -35,6 +36,7 @@ export default function DashboardNavbar({
   picture,
   kvmName,
 }: NavbarProps) {
+  const { t } = useI18n();
   const peerConnectionState = useRTCStore(state => state.peerConnectionState);
   const setUser = useUserStore(state => state.setUser);
   const navigate = useNavigate();
@@ -131,7 +133,7 @@ export default function DashboardNavbar({
                                   <div className="border-b border-b-slate-800/20 dark:border-slate-300/20">
                                     <div className="p-2">
                                       <div className="font-display text-xs">
-                                        Logged in as
+                                        {t("header.loggedInAs")}
                                       </div>
                                       <div className="font-display max-w-[200px] truncate text-sm font-semibold">
                                         {userEmail}
@@ -146,7 +148,7 @@ export default function DashboardNavbar({
                               >
                                 <button className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
                                   <ArrowLeftEndOnRectangleIcon className="size-4" />
-                                  <div className="font-display">Log out</div>
+                                  <div className="font-display">{t("header.logout")}</div>
                                 </button>
                               </div>
                             </Card>

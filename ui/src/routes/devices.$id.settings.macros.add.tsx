@@ -6,6 +6,7 @@ import { SettingsPageHeader } from "@/components/SettingsPageheader";
 import { MacroForm } from "@/components/MacroForm";
 import { DEFAULT_DELAY } from "@/constants/macros";
 import notifications from "@/notifications";
+import { useI18n } from "@/i18n";
 
 export default function SettingsMacrosAddRoute() {
   const { macros, saveMacros } = useMacrosStore();
@@ -46,8 +47,8 @@ export default function SettingsMacrosAddRoute() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="Add New Macro"
-        description="Create a new keyboard macro"
+        title={useI18n().t("settings.macros.addPage.title")}
+        description={useI18n().t("settings.macros.addPage.desc")}
       />
       <MacroForm
         initialData={{

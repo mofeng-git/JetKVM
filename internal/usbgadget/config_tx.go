@@ -12,16 +12,16 @@ import (
 // no os package should occur in this file
 
 type UsbGadgetTransaction struct {
-	c *ChangeSet
+    c *ChangeSet
 
 	// below are the fields that are needed to be set by the caller
-	log                       *zerolog.Logger
-	udc                       string
-	dwc3Path                  string
-	kvmGadgetPath             string
-	configC1Path              string
-	orderedConfigItems        orderedGadgetConfigItems
-	isGadgetConfigItemEnabled func(key string) bool
+    log                       *zerolog.Logger
+    udc                       string
+    udcDriverPath             string
+    kvmGadgetPath             string
+    configC1Path              string
+    orderedConfigItems        orderedGadgetConfigItems
+    isGadgetConfigItemEnabled func(key string) bool
 
 	reorderSymlinkChanges *RequestedFileChange
 }
@@ -36,16 +36,16 @@ func (u *UsbGadget) newUsbGadgetTransaction(lock bool) error {
 		return fmt.Errorf("transaction already exists")
 	}
 
-	tx := &UsbGadgetTransaction{
-		c:                         &ChangeSet{},
-		log:                       u.log,
-		udc:                       u.udc,
-		dwc3Path:                  dwc3Path,
-		kvmGadgetPath:             u.kvmGadgetPath,
-		configC1Path:              u.configC1Path,
-		orderedConfigItems:        u.getOrderedConfigItems(),
-		isGadgetConfigItemEnabled: u.isGadgetConfigItemEnabled,
-	}
+    tx := &UsbGadgetTransaction{
+        c:                         &ChangeSet{},
+        log:                       u.log,
+        udc:                       u.udc,
+        udcDriverPath:             u.udcDriverPath,
+        kvmGadgetPath:             u.kvmGadgetPath,
+        configC1Path:              u.configC1Path,
+        orderedConfigItems:        u.getOrderedConfigItems(),
+        isGadgetConfigItemEnabled: u.isGadgetConfigItemEnabled,
+    }
 	u.tx = tx
 
 	return nil
@@ -329,21 +329,21 @@ func (tx *UsbGadgetTransaction) WriteUDC() {
 }
 
 func (tx *UsbGadgetTransaction) RebindUsb(ignoreUnbindError bool) {
-	// remove the gadget from the UDC
-	tx.addFileChange("udc", RequestedFileChange{
-		Path:            path.Join(tx.dwc3Path, "unbind"),
-		ExpectedState:   FileStateFileWrite,
-		ExpectedContent: []byte(tx.udc),
-		Description:     "unbind UDC",
-		DependsOn:       []string{"udc"},
-		IgnoreErrors:    ignoreUnbindError,
-	})
-	// bind the gadget to the UDC
-	tx.addFileChange("udc", RequestedFileChange{
-		Path:            path.Join(tx.dwc3Path, "bind"),
-		ExpectedState:   FileStateFileWrite,
-		ExpectedContent: []byte(tx.udc),
-		Description:     "bind UDC",
-		DependsOn:       []string{path.Join(tx.dwc3Path, "unbind")},
-	})
+    // remove the gadget from the UDC
+    tx.addFileChange("udc", RequestedFileChange{
+        Path:            path.Join(tx.udcDriverPath, "unbind"),
+        ExpectedState:   FileStateFileWrite,
+        ExpectedContent: []byte(tx.udc),
+        Description:     "unbind UDC",
+        DependsOn:       []string{"udc"},
+        IgnoreErrors:    ignoreUnbindError,
+    })
+    // bind the gadget to the UDC
+    tx.addFileChange("udc", RequestedFileChange{
+        Path:            path.Join(tx.udcDriverPath, "bind"),
+        ExpectedState:   FileStateFileWrite,
+        ExpectedContent: []byte(tx.udc),
+        Description:     "bind UDC",
+        DependsOn:       []string{path.Join(tx.udcDriverPath, "unbind")},
+    })
 }

@@ -9,6 +9,7 @@ import { useSettingsStore } from "@/hooks/stores";
 import { SelectMenuBasic } from "@components/SelectMenuBasic";
 import Fieldset from "@components/Fieldset";
 import notifications from "@/notifications";
+import { useI18n } from "@/i18n";
 
 const defaultEdid =
   "00ffffffffffff0052620188008888881c150103800000780a0dc9a05747982712484c00000001010101010101010101010101010101023a801871382d40582c4500c48e2100001e011d007251d01e206e285500c48e2100001e000000fc00543734392d6648443732300a20000000fd00147801ff1d000a202020202020017b";
@@ -39,13 +40,10 @@ const edids = [
   },
 ];
 
-const streamQualityOptions = [
-  { value: "1", label: "High" },
-  { value: "0.5", label: "Medium" },
-  { value: "0.1", label: "Low" },
-];
+// quality options are built inline using i18n
 
 export default function SettingsVideoRoute() {
+  const { t } = useI18n();
   const { send } = useJsonRpc();
   const [streamQuality, setStreamQuality] = useState("1");
   const [customEdidValue, setCustomEdidValue] = useState<string | null>(null);
@@ -72,7 +70,7 @@ export default function SettingsVideoRoute() {
     send("getEDID", {}, (resp: JsonRpcResponse) => {
       setEdidLoading(false);
       if ("error" in resp) {
-        notifications.error(`Failed to get EDID: ${resp.error.data || "Unknown error"}`);
+        notifications.error(t("settings.video.notify.getEdidFail", { reason: resp.error.data || "Unknown error" }));
         return;
       }
 
@@ -101,14 +99,13 @@ export default function SettingsVideoRoute() {
       (resp: JsonRpcResponse) => {
         if ("error" in resp) {
           notifications.error(
-            `Failed to set stream quality: ${resp.error.data || "Unknown error"}`,
+            t("settings.video.notify.setQualityFail", { reason: resp.error.data || "Unknown error" }),
           );
           return;
         }
 
-        notifications.success(
-          `Stream quality set to ${streamQualityOptions.find(x => x.value === factor)?.label}`,
-        );
+        const qLabel = factor === "1" ? t("settings.video.quality.high") : factor === "0.5" ? t("settings.video.quality.medium") : t("settings.video.quality.low");
+        notifications.success(t("settings.video.notify.setQualityOk", { label: qLabel }));
         setStreamQuality(factor);
       },
     );
@@ -119,13 +116,11 @@ export default function SettingsVideoRoute() {
     send("setEDID", { edid: newEdid }, (resp: JsonRpcResponse) => {
       setEdidLoading(false);
       if ("error" in resp) {
-        notifications.error(`Failed to set EDID: ${resp.error.data || "Unknown error"}`);
+        notifications.error(t("settings.video.notify.setEdidFail", { reason: resp.error.data || "Unknown error" }));
         return;
       }
 
-      notifications.success(
-        `EDID set successfully to ${edids.find(x => x.value === newEdid)?.label ?? "the custom EDID"}`,
-      );
+      notifications.success(t("settings.video.notify.setEdidOk"));
       // Update the EDID value in the UI
       setEdid(newEdid);
     });
@@ -155,35 +150,39 @@ export default function SettingsVideoRoute() {
     <div className="space-y-3">
       <div className="space-y-4">
         <SettingsPageHeader
-          title="Video"
-          description="Configure display settings and EDID for optimal compatibility"
+          title={t("settings.video.title")}
+          description={t("settings.video.desc")}
         />
 
         <div className="space-y-4">
           <div className="space-y-4">
             <SettingsItem
-              title="Stream Quality"
-              description="Adjust the quality of the video stream"
+              title={t("settings.video.streamQualityTitle")}
+              description={t("settings.video.streamQualityDesc")}
             >
               <SelectMenuBasic
                 size="SM"
                 label=""
                 value={streamQuality}
-                options={streamQualityOptions}
+                options={[
+                  { value: "1", label: t("settings.video.quality.high") },
+                  { value: "0.5", label: t("settings.video.quality.medium") },
+                  { value: "0.1", label: t("settings.video.quality.low") },
+                ]}
                 onChange={e => handleStreamQualityChange(e.target.value)}
               />
             </SettingsItem>
 
             {/* Video Enhancement Settings */}
             <SettingsItem
-              title="Video Enhancement"
-              description="Adjust color settings to make the video output more vibrant and colorful"
+              title={t("settings.video.enhanceTitle")}
+              description={t("settings.video.enhanceDesc")}
             />
 
             <div className="space-y-4 pl-4">
               <SettingsItem
-                title="Saturation"
-                description={`Color saturation (${videoSaturation.toFixed(1)}x)`}
+                title={t("settings.video.saturation")}
+                description={t("settings.video.saturationDesc", { x: videoSaturation.toFixed(1) })}
               >
                 <input
                   type="range"
@@ -197,8 +196,8 @@ export default function SettingsVideoRoute() {
               </SettingsItem>
 
               <SettingsItem
-                title="Brightness"
-                description={`Brightness level (${videoBrightness.toFixed(1)}x)`}
+                title={t("settings.video.brightness")}
+                description={t("settings.video.brightnessDesc", { x: videoBrightness.toFixed(1) })}
               >
                 <input
                   type="range"
@@ -212,8 +211,8 @@ export default function SettingsVideoRoute() {
               </SettingsItem>
 
               <SettingsItem
-                title="Contrast"
-                description={`Contrast level (${videoContrast.toFixed(1)}x)`}
+                title={t("settings.video.contrast")}
+                description={t("settings.video.contrastDesc", { x: videoContrast.toFixed(1) })}
               >
                 <input
                   type="range"
@@ -230,7 +229,7 @@ export default function SettingsVideoRoute() {
                 <Button
                   size="SM"
                   theme="light"
-                  text="Reset to Default"
+                  text={t("settings.video.reset")}
                   onClick={() => {
                     setVideoSaturation(1.0);
                     setVideoBrightness(1.0);
@@ -241,8 +240,8 @@ export default function SettingsVideoRoute() {
             </div>
             <Fieldset disabled={edidLoading} className="space-y-2">
               <SettingsItem
-                title="EDID"
-                description="Adjust the EDID settings for the display"
+                title={t("settings.video.edidTitle")}
+                description={t("settings.video.edidDesc")}
                 loading={edidLoading}
               >
                 <SelectMenuBasic
@@ -259,18 +258,18 @@ export default function SettingsVideoRoute() {
                       handleEDIDChange(e.target.value as string);
                     }
                   }}
-                  options={[...edids, { value: "custom", label: "Custom" }]}
+                  options={[...edids.map(x => ({...x})), { value: "custom", label: t("settings.video.edidCustomTitle") }]}
                 />
               </SettingsItem>
               {customEdidValue !== null && (
                 <>
                   <SettingsItem
-                    title="Custom EDID"
-                    description="EDID details video mode compatibility. Default settings works in most cases, but unique UEFI/BIOS might need adjustments."
+                    title={t("settings.video.edidCustomTitle")}
+                    description={t("settings.video.edidCustomDesc")}
                   />
                   <TextAreaWithLabel
-                    label="EDID File"
-                    placeholder="00F..."
+                    label={t("settings.video.edidFileLabel")}
+                    placeholder={t("settings.video.edidFilePlaceholder")}
                     rows={3}
                     value={customEdidValue}
                     onChange={e => setCustomEdidValue(e.target.value)}
@@ -279,14 +278,14 @@ export default function SettingsVideoRoute() {
                     <Button
                       size="SM"
                       theme="primary"
-                      text="Set Custom EDID"
+                      text={t("settings.video.edidSetCustom")}
                       loading={edidLoading}
                       onClick={() => handleEDIDChange(customEdidValue)}
                     />
                     <Button
                       size="SM"
                       theme="light"
-                      text="Restore to default"
+                      text={t("settings.video.edidRestore")}
                       loading={edidLoading}
                       onClick={() => {
                         setCustomEdidValue(null);
@@ -303,10 +302,10 @@ export default function SettingsVideoRoute() {
           {debugMode && (
             <div className="space-y-4">
               <SettingsItem
-                title="Debugging Info"
-                description="Debugging information for video"
+                title={t("settings.video.debugTitle")}
+                description={t("settings.video.debugDesc")}
               >
-                <Button size="SM" theme="primary" text="Get Debugging Info"
+                <Button size="SM" theme="primary" text={t("settings.video.debugGet")}
                   loading={debugInfoLoading}
                   disabled={debugInfoLoading}
                   onClick={() => {

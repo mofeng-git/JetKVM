@@ -16,12 +16,14 @@ import { useHidStore, useUiStore } from "@/hooks/stores";
 import useKeyboard from "@/hooks/useKeyboard";
 import useKeyboardLayout from "@/hooks/useKeyboardLayout";
 import { decodeModifiers, keys, latchingKeys, modifiers } from "@/keyboardMappings";
+import { useI18n } from "@/i18n";
 
 export const DetachIcon = ({ className }: { className?: string }) => {
   return <img src={DetachIconRaw} alt="Detach Icon" className={className} />;
 };
 
 function KeyboardWrapper() {
+  const { t } = useI18n();
   const keyboardRef = useRef<HTMLDivElement>(null);
   const { isAttachedVirtualKeyboardVisible, setAttachedVirtualKeyboardVisibility } =
     useUiStore();
@@ -244,20 +246,20 @@ function KeyboardWrapper() {
                       <Button
                         size="XS"
                         theme="light"
-                        text="Detach"
+                        text={t("virtualKeyboard.detach")}
                         onClick={() => setAttachedVirtualKeyboardVisibility(false)}
                       />
                     ) : (
                       <Button
                         size="XS"
                         theme="light"
-                        text="Attach"
+                        text={t("virtualKeyboard.attach")}
                         onClick={() => setAttachedVirtualKeyboardVisibility(true)}
                       />
                     )}
                   </div>
                   <h2 className="self-center font-sans text-sm leading-none font-medium text-slate-700 select-none dark:text-slate-300">
-                    Virtual Keyboard
+                    {t("virtualKeyboard.title")}
                   </h2>
                   <div className="absolute right-2 flex items-center gap-x-2">
                     <div className="hidden md:flex gap-x-2 items-center">
@@ -274,7 +276,7 @@ function KeyboardWrapper() {
                     <Button
                       size="XS"
                       theme="light"
-                      text="Hide"
+                      text={t("virtualKeyboard.hide")}
                       LeadingIcon={ChevronDownIcon}
                       onClick={() => setVirtualKeyboardEnabled(false)}
                     />

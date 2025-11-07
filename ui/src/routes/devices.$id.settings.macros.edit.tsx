@@ -8,6 +8,7 @@ import { MacroForm } from "@/components/MacroForm";
 import notifications from "@/notifications";
 import { Button } from "@/components/Button";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useI18n } from "@/i18n";
 
 const normalizeSortOrders = (macros: KeySequence[]): KeySequence[] => {
   return macros.map((macro, index) => ({
@@ -17,6 +18,7 @@ const normalizeSortOrders = (macros: KeySequence[]): KeySequence[] => {
 };
 
 export default function SettingsMacrosEditRoute() {
+  const { t } = useI18n();
   const { macros, saveMacros } = useMacrosStore();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -95,13 +97,13 @@ export default function SettingsMacrosEditRoute() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <SettingsPageHeader
-          title="Edit Macro"
-          description="Modify your keyboard macro"
+          title={t("settings.macros.editPage.title")}
+          description={t("settings.macros.editPage.desc")}
         />
         <Button
           size="SM"
           theme="light"
-          text="Delete Macro"
+          text={t("settings.macros.editPage.deleteBtn")}
           className="text-red-500 dark:text-red-400"
           LeadingIcon={LuTrash2}
           onClick={() => setShowDeleteConfirm(true)}
@@ -113,16 +115,16 @@ export default function SettingsMacrosEditRoute() {
         onSubmit={handleUpdateMacro}
         onCancel={() => navigate("../")}
         isSubmitting={isUpdating}
-        submitText="Save Changes"
+        submitText={t("settings.macros.editPage.save")}
       />
 
       <ConfirmDialog
         open={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        title="Delete Macro"
-        description="Are you sure you want to delete this macro? This action cannot be undone."
+        title={useI18n().t("settings.macros.editPage.deleteTitle")}
+        description={useI18n().t("settings.macros.editPage.deleteDesc")}
         variant="danger"
-        confirmText={isDeleting ? "Deleting" : "Delete"}
+        confirmText={isDeleting ? useI18n().t("settings.macros.editPage.deleting") : useI18n().t("settings.macros.delete")}
         onConfirm={() => {
           handleDeleteMacro();
           setShowDeleteConfirm(false);

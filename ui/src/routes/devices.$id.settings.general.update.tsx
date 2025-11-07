@@ -7,6 +7,7 @@ import { useJsonRpc } from "@/hooks/useJsonRpc";
 import { Button } from "@components/Button";
 import { UpdateState, useUpdateStore } from "@/hooks/stores";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useI18n } from "@/i18n";
 import { useDeviceUiNavigation } from "@/hooks/useAppNavigation";
 import { SystemVersionInfo, useVersion } from "@/hooks/useVersion";
 
@@ -126,6 +127,7 @@ function LoadingState({
   onFinished: (versionInfo: SystemVersionInfo) => void;
   onCancelCheck: () => void;
 }) {
+  const { t } = useI18n();
   const [progressWidth, setProgressWidth] = useState("0%");
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -169,10 +171,10 @@ function LoadingState({
       <div className="space-y-4">
         <div className="space-y-0">
           <p className="text-base font-semibold text-black dark:text-white">
-            Checking for updates...
+            {t("settings.update.checking")}
           </p>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            We{"'"}re ensuring your device has the latest features and improvements.
+            {t("settings.update.checkingDesc")}
           </p>
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-300">
@@ -183,7 +185,7 @@ function LoadingState({
           ></div>
         </div>
         <div className="mt-4">
-          <Button size="SM" theme="light" text="Cancel" onClick={onCancelCheck} />
+          <Button size="SM" theme="light" text={t("settings.update.cancel")} onClick={onCancelCheck} />
         </div>
       </div>
     </div>
@@ -197,6 +199,7 @@ function UpdatingDeviceState({
   otaState: UpdateState["otaState"];
   onMinimizeUpgradeDialog: () => void;
 }) {
+  const { t } = useI18n();
   const formatProgress = (progress: number) => `${Math.round(progress)}%`;
 
   const calculateOverallProgress = (type: "system" | "app") => {
@@ -238,15 +241,15 @@ function UpdatingDeviceState({
     const updatedAt = otaState[`${type}UpdatedAt`];
 
     if (!otaState.metadataFetchedAt) {
-      return "Fetching update information...";
+      return t("settings.update.fetching");
     } else if (!downloadFinishedAt) {
-      return `Downloading ${type} update...`;
+      return t("settings.update.downloading", { type });
     } else if (!verfiedAt) {
-      return `Verifying ${type} update...`;
+      return t("settings.update.verifying", { type });
     } else if (!updatedAt) {
-      return `Installing ${type} update...`;
+      return t("settings.update.installing", { type });
     } else {
-      return `Awaiting reboot`;
+      return t("settings.update.awaitingReboot");
     }
   };
 
@@ -269,10 +272,10 @@ function UpdatingDeviceState({
       <div className="w-full max-w-sm space-y-4">
         <div className="space-y-0">
           <p className="text-base font-semibold text-black dark:text-white">
-            Updating your device
+            {t("settings.update.updatingTitle")}
           </p>
           <p className="text-sm text-slate-600 dark:text-slate-300">
-            Please don{"'"}t turn off your device. This process may take a few minutes.
+            {t("settings.update.updatingDesc")}
           </p>
         </div>
         <Card className="space-y-4 p-4">
@@ -281,7 +284,7 @@ function UpdatingDeviceState({
               <LoadingSpinner className="h-6 w-6 text-blue-700 dark:text-blue-500" />
               <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
                 <span className="font-medium text-black dark:text-white">
-                  Rebooting to complete the update...
+                  {t("settings.update.rebooting")}
                 </span>
               </div>
             </div>
@@ -297,7 +300,7 @@ function UpdatingDeviceState({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-black dark:text-white">
-                      Linux System Update
+                      {t("settings.update.linuxSystem")}
                     </p>
                     {calculateOverallProgress("system") < 100 ? (
                       <LoadingSpinner className="h-4 w-4 text-blue-700 dark:text-blue-500" />
@@ -328,9 +331,9 @@ function UpdatingDeviceState({
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-black dark:text-white">
-                        App Update
-                      </p>
+                    <p className="text-sm font-semibold text-black dark:text-white">
+                      {t("settings.update.appUpdate")}
+                    </p>
                       {calculateOverallProgress("app") < 100 ? (
                         <LoadingSpinner className="h-4 w-4 text-blue-700 dark:text-blue-500" />
                       ) : (
@@ -361,7 +364,7 @@ function UpdatingDeviceState({
           <Button
             size="XS"
             theme="light"
-            text="Update in Background"
+            text={t("settings.update.bg")}
             onClick={onMinimizeUpgradeDialog}
           />
         </div>
@@ -377,19 +380,20 @@ function SystemUpToDateState({
   checkUpdate: () => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
       <div className="text-left">
         <p className="text-base font-semibold text-black dark:text-white">
-          System is up to date
+          {t("settings.update.uptodateTitle")}
         </p>
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Your system is running the latest version. No updates are currently available.
+          {t("settings.update.uptodateDesc")}
         </p>
 
         <div className="mt-4 flex gap-x-2">
-          <Button size="SM" theme="light" text="Check Again" onClick={checkUpdate} />
-          <Button size="SM" theme="blank" text="Back" onClick={onClose} />
+          <Button size="SM" theme="light" text={t("settings.update.checkAgain")} onClick={checkUpdate} />
+          <Button size="SM" theme="blank" text={t("settings.update.back")} onClick={onClose} />
         </div>
       </div>
     </div>
@@ -405,34 +409,34 @@ function UpdateAvailableState({
   onConfirmUpdate: () => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
       <div className="text-left">
         <p className="text-base font-semibold text-black dark:text-white">
-          Update available
+          {t("settings.update.availableTitle")}
         </p>
         <p className="mb-2 text-sm text-slate-600 dark:text-slate-300">
-          A new update is available to enhance system performance and improve
-          compatibility. We recommend updating to ensure everything runs smoothly.
+          {t("settings.update.availableDesc")}
         </p>
         <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
           {versionInfo?.systemUpdateAvailable ? (
             <>
-              <span className="font-semibold">System:</span>{" "}
+              <span className="font-semibold">{t("settings.update.availableSystem")}</span>{" "}
               {versionInfo?.remote?.systemVersion}
               <br />
             </>
           ) : null}
           {versionInfo?.appUpdateAvailable ? (
             <>
-              <span className="font-semibold">App:</span>{" "}
+              <span className="font-semibold">{t("settings.update.availableApp")}</span>{" "}
               {versionInfo?.remote?.appVersion}
             </>
           ) : null}
         </p>
         <div className="flex items-center justify-start gap-x-2">
-          <Button size="SM" theme="primary" text="Update Now" onClick={onConfirmUpdate} />
-          <Button size="SM" theme="light" text="Do it later" onClick={onClose} />
+          <Button size="SM" theme="primary" text={t("settings.update.updateNow")} onClick={onConfirmUpdate} />
+          <Button size="SM" theme="light" text={t("settings.update.later")} onClick={onClose} />
         </div>
       </div>
     </div>
@@ -440,18 +444,18 @@ function UpdateAvailableState({
 }
 
 function UpdateCompletedState({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
       <div className="text-left">
         <p className="text-base font-semibold dark:text-white">
-          Update Completed Successfully
+          {t("settings.update.completedTitle")}
         </p>
         <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          Your device has been successfully updated to the latest version. Enjoy the new
-          features and improvements!
+          {t("settings.update.completedDesc")}
         </p>
         <div className="flex items-center justify-start">
-          <Button size="SM" theme="primary" text="Back" onClick={onClose} />
+          <Button size="SM" theme="primary" text={t("settings.update.back")} onClick={onClose} />
         </div>
       </div>
     </div>
@@ -467,21 +471,22 @@ function UpdateErrorState({
   onClose: () => void;
   onRetryUpdate: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
       <div className="text-left">
-        <p className="text-base font-semibold dark:text-white">Update Error</p>
+        <p className="text-base font-semibold dark:text-white">{t("settings.update.errorTitle")}</p>
         <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-          An error occurred while updating your device. Please try again later.
+          {t("settings.update.errorDesc")}
         </p>
         {errorMessage && (
           <p className="mb-4 text-sm font-medium text-red-600 dark:text-red-400">
-            Error details: {errorMessage}
+            {t("settings.update.errorDetails", { msg: errorMessage })}
           </p>
         )}
         <div className="flex items-center justify-start gap-x-2">
-          <Button size="SM" theme="light" text="Back" onClick={onClose} />
-          <Button size="SM" theme="blank" text="Retry" onClick={onRetryUpdate} />
+          <Button size="SM" theme="light" text={t("settings.update.back")} onClick={onClose} />
+          <Button size="SM" theme="blank" text={t("settings.update.retry")} onClick={onRetryUpdate} />
         </div>
       </div>
     </div>

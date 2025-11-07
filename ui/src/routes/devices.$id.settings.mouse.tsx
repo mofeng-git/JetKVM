@@ -15,6 +15,7 @@ import { JigglerSetting } from "@components/JigglerSetting";
 import { cx } from "../cva.config";
 import notifications from "../notifications";
 import SettingsNestedSection from "../components/SettingsNestedSection";
+import { useI18n } from "@/i18n";
 
 export interface JigglerConfig {
   inactivity_limit_seconds: number;
@@ -75,15 +76,16 @@ export default function SettingsMouseRoute() {
     null,
   );
 
-  const scrollThrottlingOptions = [
-    { value: "0", label: "Off" },
-    { value: "10", label: "Low" },
-    { value: "25", label: "Medium" },
-    { value: "50", label: "High" },
-    { value: "100", label: "Very High" },
-  ];
-
   const { send } = useJsonRpc();
+  const { t } = useI18n();
+
+  const scrollThrottlingOptions = [
+    { value: "0", label: t("settings.mouse.scroll.off") },
+    { value: "10", label: t("settings.mouse.scroll.low") },
+    { value: "25", label: t("settings.mouse.scroll.medium") },
+    { value: "50", label: t("settings.mouse.scroll.high") },
+    { value: "100", label: t("settings.mouse.scroll.veryHigh") },
+  ];
 
   const syncJigglerSettings = useCallback(() => {
     send("getJigglerState", {}, (resp: JsonRpcResponse) => {
@@ -121,7 +123,7 @@ export default function SettingsMouseRoute() {
       send("setJigglerState", { enabled: true }, (resp: JsonRpcResponse) => {
         if ("error" in resp) {
           return notifications.error(
-            `Failed to set jiggler state: ${resp.error.data || "Unknown error"}`,
+            t("settings.mouse.notify.setStateFail", { reason: resp.error.data || "Unknown error" }),
           );
         }
       });
@@ -136,15 +138,13 @@ export default function SettingsMouseRoute() {
             errorMsg.includes("parse failure") ||
             errorMsg.includes("invalid cron")
           ) {
-            return notifications.error(
-              "Invalid cron expression. Please check your schedule format (e.g., '0 * * * * *' for every minute).",
-            );
+            return notifications.error(t("settings.mouse.notify.invalidCron"));
           }
 
-          return notifications.error(`Failed to set jiggler config: ${errorMsg}`);
+          return notifications.error(t("settings.mouse.notify.setConfigFail", { reason: errorMsg }));
         }
 
-        notifications.success(`Jiggler Config successfully updated`);
+        notifications.success(t("settings.mouse.notify.configUpdated"));
         syncJigglerSettings();
       });
     },
@@ -168,13 +168,13 @@ export default function SettingsMouseRoute() {
         }
       });
 
-      notifications.success(`Jiggler Config successfully updated`);
+      notifications.success(t("settings.mouse.notify.configUpdated"));
       return setSelectedJigglerOption("disabled");
     }
 
     const jigglerConfig = jigglerOptions.find(o => o.value === option)?.config;
     if (!jigglerConfig) {
-      return notifications.error("There was an error setting the jiggler config");
+      return notifications.error(t("settings.mouse.notify.setConfigError"));
     }
 
     saveJigglerConfig(jigglerConfig);
@@ -183,14 +183,14 @@ export default function SettingsMouseRoute() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="Mouse"
-        description="Configure cursor behavior and interaction settings for your device"
+        title={t("settings.mouse.title")}
+        description={t("settings.mouse.desc")}
       />
 
       <div className="space-y-4">
         <SettingsItem
-          title="Hide Cursor"
-          description="Hide the cursor when sending mouse movements"
+          title={t("settings.mouse.hideCursorTitle")}
+          description={t("settings.mouse.hideCursorDesc")}
         >
           <Checkbox
             checked={isCursorHidden}
@@ -199,8 +199,8 @@ export default function SettingsMouseRoute() {
         </SettingsItem>
 
         <SettingsItem
-          title="Scroll Throttling"
-          description="Reduce the frequency of scroll events"
+          title={t("settings.mouse.scrollTitle")}
+          description={t("settings.mouse.scrollDesc")}
         >
           <SelectMenuBasic
             size="SM"
@@ -213,7 +213,7 @@ export default function SettingsMouseRoute() {
           />
         </SettingsItem>
 
-        <SettingsItem title="Jiggler" description="Simulate movement of a computer mouse">
+        <SettingsItem title={t("settings.mouse.jigglerTitle")} description={t("settings.mouse.jigglerDesc")}>
           <SelectMenuBasic
             size="SM"
             label=""
@@ -221,9 +221,9 @@ export default function SettingsMouseRoute() {
             options={[
               ...jigglerOptions.map(option => ({
                 value: option.value,
-                label: option.label,
+                label: t(`settings.mouse.preset.${option.value}`),
               })),
-              { value: "custom", label: "Custom" },
+              { value: "custom", label: t("settings.mouse.preset.custom") },
             ]}
             onChange={e => {
               handleJigglerChange(
@@ -242,7 +242,7 @@ export default function SettingsMouseRoute() {
           </SettingsNestedSection>
         )}
         <div className="space-y-4">
-          <SettingsItem title="Modes" description="Choose the mouse input mode" />
+          <SettingsItem title={t("settings.mouse.modesTitle")} description={t("settings.mouse.modesDesc")} />
           <div className="flex items-center gap-4">
             <button
               className="group block grow"
@@ -260,10 +260,10 @@ export default function SettingsMouseRoute() {
                   <div className="flex grow items-center justify-between">
                     <div className="text-left">
                       <h3 className="text-sm font-semibold text-black dark:text-white">
-                        Absolute
+                        {t("settings.mouse.absolute.title")}
                       </h3>
                       <p className="text-xs leading-none text-slate-800 dark:text-slate-300">
-                        Most convenient
+                        {t("settings.mouse.absolute.subtitle")}
                       </p>
                     </div>
                     <CheckCircleIcon
@@ -292,10 +292,10 @@ export default function SettingsMouseRoute() {
                   <div className="flex grow items-center justify-between">
                     <div className="text-left">
                       <h3 className="text-sm font-semibold text-black dark:text-white">
-                        Relative
+                        {t("settings.mouse.relative.title")}
                       </h3>
                       <p className="text-xs leading-none text-slate-800 dark:text-slate-300">
-                        Most Compatible
+                        {t("settings.mouse.relative.subtitle")}
                       </p>
                     </div>
                     <CheckCircleIcon

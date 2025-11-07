@@ -20,6 +20,7 @@ import { TextAreaWithLabel } from "@components/TextArea";
 
 import { LocalDevice } from "./devices.$id";
 import { CloudState } from "./adopt";
+import { useI18n } from "@/i18n";
 
 export interface TLSState {
   mode: "self-signed" | "custom" | "disabled";
@@ -39,6 +40,7 @@ const loader: LoaderFunction = async () => {
 
 export default function SettingsAccessIndexRoute() {
   const loaderData = useLoaderData() as LocalDevice | null;
+  const { t } = useI18n();
 
   const { navigateTo } = useDeviceUiNavigation();
   const navigate = useNavigate();
@@ -92,7 +94,7 @@ export default function SettingsAccessIndexRoute() {
     send("deregisterDevice", {}, (resp: JsonRpcResponse) => {
       if ("error" in resp) {
         notifications.error(
-          `Failed to de-register device: ${resp.error.data || "Unknown error"}`,
+          t("settings.access.notify.deregisterFail", { reason: resp.error.data || "Unknown error" }),
         );
         return;
       }
@@ -107,14 +109,14 @@ export default function SettingsAccessIndexRoute() {
   const onCloudAdoptClick = useCallback(
     (cloudApiUrl: string, cloudAppUrl: string) => {
       if (!deviceId) {
-        notifications.error("No device ID available");
+        notifications.error(t("settings.access.noDeviceId"));
         return;
       }
 
       send("setCloudUrl", { apiUrl: cloudApiUrl, appUrl: cloudAppUrl }, (resp: JsonRpcResponse) => {
         if ("error" in resp) {
           notifications.error(
-            `Failed to update cloud URL: ${resp.error.data || "Unknown error"}`,
+            t("settings.access.notify.updateCloudUrlFail", { reason: resp.error.data || "Unknown error" }),
           );
           return;
         }
@@ -206,22 +208,22 @@ export default function SettingsAccessIndexRoute() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="Access"
-        description="Manage the Access Control of the device"
+        title={t("settings.access.title")}
+        description={t("settings.access.desc")}
       />
 
       {loaderData?.authMode && (
         <>
           <div className="space-y-4">
             <SettingsSectionHeader
-              title="Local"
-              description="Manage the mode of local access to the device"
+              title={t("settings.access.localTitle")}
+              description={t("settings.access.localDesc")}
             />
             <>
               <SettingsItem
-                title="HTTPS Mode"
-                badge="Experimental"
-                description="Configure secure HTTPS access to your device"
+                title={t("settings.access.httpsTitle")}
+                badge={t("settings.access.httpsBadge")}
+                description={t("settings.access.httpsDesc")}
               >
                 <SelectMenuBasic
                   size="SM"
@@ -229,9 +231,9 @@ export default function SettingsAccessIndexRoute() {
                   onChange={e => handleTlsModeChange(e.target.value)}
                   disabled={tlsMode === "unknown"}
                   options={[
-                    { value: "disabled", label: "Disabled" },
-                    { value: "self-signed", label: "Self-signed" },
-                    { value: "custom", label: "Custom" },
+                    { value: "disabled", label: t("settings.access.httpsOptions.disabled") },
+                    { value: "self-signed", label: t("settings.access.httpsOptions.self") },
+                    { value: "custom", label: t("settings.access.httpsOptions.custom") },
                   ]}
                 />
               </SettingsItem>
@@ -240,16 +242,14 @@ export default function SettingsAccessIndexRoute() {
                 <div className="mt-4 space-y-4">
                   <div className="space-y-4">
                     <SettingsItem
-                      title="TLS Certificate"
-                      description="Paste your TLS certificate below. For certificate chains, include the entire chain (leaf, intermediate, and root certificates)."
+                      title={t("settings.access.tlsCertTitle")}
+                      description={t("settings.access.tlsCertDesc")}
                     />
                     <div className="space-y-4">
                       <TextAreaWithLabel
-                        label="Certificate"
+                        label={t("settings.access.certLabel")}
                         rows={3}
-                        placeholder={
-                          "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
-                        }
+                        placeholder={t("settings.access.certPlaceholder")}
                         value={tlsCert}
                         onChange={e => handleTlsCertChange(e.target.value)}
                       />
@@ -258,12 +258,10 @@ export default function SettingsAccessIndexRoute() {
                     <div className="space-y-4">
                       <div className="space-y-4">
                         <TextAreaWithLabel
-                          label="Private Key"
-                          description="For security reasons, it will not be displayed after saving."
+                          label={t("settings.access.keyLabel")}
+                          description={t("settings.access.keyDesc")}
                           rows={3}
-                          placeholder={
-                            "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-                          }
+                          placeholder={t("settings.access.keyPlaceholder")}
                           value={tlsKey}
                           onChange={e => handleTlsKeyChange(e.target.value)}
                         />
@@ -274,7 +272,7 @@ export default function SettingsAccessIndexRoute() {
                     <Button
                       size="SM"
                       theme="primary"
-                      text="Update TLS Settings"
+                      text={t("settings.access.updateTls")}
                       onClick={handleCustomTlsUpdate}
                     />
                   </div>
@@ -282,14 +280,14 @@ export default function SettingsAccessIndexRoute() {
               )}
 
               <SettingsItem
-                title="Authentication Mode"
-                description={`Current mode: ${loaderData.authMode === "password" ? "Password protected" : "No password"}`}
+                title={t("settings.access.authModeTitle")}
+                description={t("settings.access.authModeCurr", { mode: loaderData.authMode === "password" ? t("settings.access.authPasswordProtected") : t("settings.access.authNoPassword") })}
               >
                 {loaderData.authMode === "password" ? (
                   <Button
                     size="SM"
                     theme="light"
-                    text="Disable Protection"
+                    text={t("settings.access.disableProtection")}
                     onClick={() => {
                       navigateTo("./local-auth", { state: { init: "deletePassword" } });
                     }}
@@ -298,7 +296,7 @@ export default function SettingsAccessIndexRoute() {
                   <Button
                     size="SM"
                     theme="light"
-                    text="Enable Password"
+                    text={t("settings.access.enablePassword")}
                     onClick={() => {
                       navigateTo("./local-auth", { state: { init: "createPassword" } });
                     }}
@@ -309,13 +307,13 @@ export default function SettingsAccessIndexRoute() {
 
             {loaderData.authMode === "password" && (
               <SettingsItem
-                title="Change Password"
-                description="Update your device access password"
+                title={t("settings.access.changePassword")}
+                description={t("settings.access.changePasswordDesc")}
               >
                 <Button
                   size="SM"
                   theme="light"
-                  text="Change Password"
+                  text={t("settings.access.changePassword")}
                   onClick={() => {
                     navigateTo("./local-auth", { state: { init: "updatePassword" } });
                   }}
@@ -329,24 +327,24 @@ export default function SettingsAccessIndexRoute() {
 
       <div className="space-y-4">
         <SettingsSectionHeader
-          title="Remote"
-          description="Manage the mode of Remote access to the device"
+          title={t("settings.access.remoteTitle")}
+          description={t("settings.access.remoteDesc")}
         />
 
         <div className="space-y-4">
           {!isAdopted && (
             <>
               <SettingsItem
-                title="Cloud Provider"
-                description="Select the cloud provider for your device"
+                title={t("settings.access.cloudProviderTitle")}
+                description={t("settings.access.cloudProviderDesc")}
               >
                 <SelectMenuBasic
                   size="SM"
                   value={selectedProvider}
                   onChange={e => handleProviderChange(e.target.value)}
                   options={[
-                    { value: "jetkvm", label: "JetKVM Cloud" },
-                    { value: "custom", label: "Custom" },
+                    { value: "jetkvm", label: t("settings.access.cloudProvider.jetkvm") },
+                    { value: "custom", label: t("settings.access.cloudProvider.custom") },
                   ]}
                 />
               </SettingsItem>
@@ -356,19 +354,19 @@ export default function SettingsAccessIndexRoute() {
                   <div className="flex items-end gap-x-2">
                     <InputFieldWithLabel
                       size="SM"
-                      label="Cloud API URL"
+                      label={t("settings.access.cloudApiUrl")}
                       value={cloudApiUrl}
                       onChange={e => setCloudApiUrl(e.target.value)}
-                      placeholder="https://api.example.com"
+                      placeholder={t("settings.access.cloudApiPlaceholder")}
                     />
                   </div>
                   <div className="flex items-end gap-x-2">
                     <InputFieldWithLabel
                       size="SM"
-                      label="Cloud App URL"
+                      label={t("settings.access.cloudAppUrl")}
                       value={cloudAppUrl}
                       onChange={e => setCloudAppUrl(e.target.value)}
-                      placeholder="https://app.example.com"
+                      placeholder={t("settings.access.cloudAppPlaceholder")}
                     />
                   </div>
                 </div>
@@ -384,19 +382,18 @@ export default function SettingsAccessIndexRoute() {
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      Cloud Security
+                      {t("settings.access.cloudSecurityTitle")}
                     </h3>
                     <div>
                       <ul className="list-disc space-y-1 pl-5 text-xs text-slate-700 dark:text-slate-300">
-                        <li>End-to-end encryption using WebRTC (DTLS and SRTP)</li>
-                        <li>Zero Trust security model</li>
-                        <li>OIDC (OpenID Connect) authentication</li>
-                        <li>All streams encrypted in transit</li>
+                        {t("settings.access.cloudSecurityBullets").split("\n").map((x, i) => (
+                          <li key={i}>{x}</li>
+                        ))}
                       </ul>
                     </div>
 
                     <div className="text-xs text-slate-700 dark:text-slate-300">
-                      All cloud components are open-source and available on{" "}
+                      {t("settings.access.cloudSecurityOpen")} {" "}
                       <a
                         href="https://github.com/jetkvm"
                         target="_blank"
@@ -415,7 +412,7 @@ export default function SettingsAccessIndexRoute() {
                       to="https://jetkvm.com/docs/networking/remote-access"
                       size="SM"
                       theme="light"
-                      text="Learn about our cloud security"
+                      text={t("settings.access.cloudSecurityLearn")}
                     />
                   </div>
                 </div>
@@ -429,32 +426,30 @@ export default function SettingsAccessIndexRoute() {
                 onClick={() => onCloudAdoptClick(cloudApiUrl, cloudAppUrl)}
                 size="SM"
                 theme="primary"
-                text="Adopt KVM to Cloud"
+                text={t("settings.access.adoptKvm")}
               />
             </div>
           ) : (
             <div>
               <div className="space-y-2">
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Your device is adopted to the Cloud
+                  {t("settings.access.adopted")}
                 </p>
                 <div>
                   <Button
                     size="SM"
                     theme="light"
-                    text="De-register from Cloud"
+                    text={t("settings.access.deregister")}
                     className="text-red-600"
                     onClick={() => {
                       if (deviceId) {
                         if (
-                          window.confirm(
-                            "Are you sure you want to de-register this device?",
-                          )
+                          window.confirm(t("settings.access.confirmDeregister"))
                         ) {
                           deregisterDevice();
                         }
                       } else {
-                        notifications.error("No device ID available");
+                        notifications.error(t("settings.access.noDeviceId"));
                       }
                     }}
                   />

@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/Button";
 import Modal from "@/components/Modal";
 import { cx } from "@/cva.config";
+import { useI18n } from "@/i18n";
 
 type Variant = "danger" | "success" | "warning" | "info";
 
@@ -63,12 +64,15 @@ export function ConfirmDialog({
   title,
   description,
   variant = "info",
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   onConfirm,
   isConfirming = false,
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
   const { icon: Icon, iconClass, iconBgClass, buttonTheme } = variantConfig[variant];
+  const confirmLabel = confirmText ?? t("common.confirm");
+  const cancelLabel = cancelText ?? t("common.cancel");
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -95,13 +99,13 @@ export function ConfirmDialog({
             </div>
 
             <div className="flex justify-end gap-x-2">
-              {cancelText && (
-                <Button size="SM" theme="blank" text={cancelText} onClick={onClose} />
+              {cancelLabel && (
+                <Button size="SM" theme="blank" text={cancelLabel} onClick={onClose} />
               )}
               <Button
                 size="SM"
                 theme={buttonTheme}
-                text={isConfirming ? `${confirmText}...` : confirmText}
+                text={isConfirming ? `${confirmLabel}...` : confirmLabel}
                 onClick={onConfirm}
                 disabled={isConfirming}
               />

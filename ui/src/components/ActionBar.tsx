@@ -6,6 +6,7 @@ import { Fragment, useCallback, useRef } from "react";
 import { CommandLineIcon } from "@heroicons/react/20/solid";
 
 import { Button } from "@components/Button";
+import { useI18n } from "@/i18n";
 import {
   useHidStore,
   useMountMediaStore,
@@ -25,6 +26,7 @@ export default function Actionbar({
 }: {
   requestFullscreen: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const { navigateTo } = useDeviceUiNavigation();
   const { isVirtualKeyboardEnabled, setVirtualKeyboardEnabled } = useHidStore();
   const { setDisableVideoFocusTrap, terminalType, setTerminalType, toggleSidebarView } = useUiStore();
@@ -64,7 +66,7 @@ export default function Actionbar({
             <Button
               size="XS"
               theme="light"
-              text="Web Terminal"
+              text={t("kvm.actionbar.webTerminal")}
               LeadingIcon={({ className }) => <CommandLineIcon className={className} />}
               onClick={() => setTerminalType(terminalType === "kvm" ? "none" : "kvm")}
             />
@@ -74,7 +76,7 @@ export default function Actionbar({
               <Button
                 size="XS"
                 theme="light"
-                text="Paste text"
+                text={t("kvm.actionbar.pasteText")}
                 LeadingIcon={MdOutlineContentPasteGo}
                 onClick={() => {
                   setDisableVideoFocusTrap(true);
@@ -102,11 +104,11 @@ export default function Actionbar({
           <div className="relative">
             <Popover>
               <PopoverButton as={Fragment}>
-                <Button
-                  size="XS"
-                  theme="light"
-                  text="Virtual Media"
-                  LeadingIcon={({ className }) => {
+              <Button
+                size="XS"
+                theme="light"
+                text={t("kvm.actionbar.virtualMedia")}
+                LeadingIcon={({ className }) => {
                     return (
                       <>
                         <LuHardDrive className={className} />
@@ -145,15 +147,15 @@ export default function Actionbar({
           <div>
             <Popover>
               <PopoverButton as={Fragment}>
-                <Button
-                  size="XS"
-                  theme="light"
-                  text="Wake on LAN"
-                  onClick={() => {
-                    setDisableVideoFocusTrap(true);
-                  }}
-                  LeadingIcon={({ className }) => (
-                    <svg
+              <Button
+                size="XS"
+                theme="light"
+                text={t("kvm.actionbar.wakeOnLan")}
+                onClick={() => {
+                  setDisableVideoFocusTrap(true);
+                }}
+                LeadingIcon={({ className }) => (
+                  <svg
                       className={className}
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
@@ -198,7 +200,7 @@ export default function Actionbar({
             <Button
               size="XS"
               theme="light"
-              text="Virtual Keyboard"
+              text={t("kvm.actionbar.virtualKeyboard")}
               LeadingIcon={FaKeyboard}
               onClick={() => setVirtualKeyboardEnabled(!isVirtualKeyboardEnabled)}
             />
@@ -211,7 +213,7 @@ export default function Actionbar({
               <Button
                 size="XS"
                 theme="light"
-                text="Extension"
+                text={t("kvm.actionbar.extension")}
                 LeadingIcon={LuCable}
                 onClick={() => {
                   setDisableVideoFocusTrap(true);
@@ -237,7 +239,7 @@ export default function Actionbar({
             <Button
               size="XS"
               theme="light"
-              text="Virtual Keyboard"
+              text={t("kvm.actionbar.virtualKeyboard")}
               LeadingIcon={FaKeyboard}
               onClick={() => setVirtualKeyboardEnabled(!isVirtualKeyboardEnabled)}
             />
@@ -246,7 +248,7 @@ export default function Actionbar({
             <Button
               size="XS"
               theme="light"
-              text="Connection Stats"
+              text={t("stats.sidebarTitle")}
               LeadingIcon={({ className }) => (
                 <LuSignal
                   className={cx(className, "mb-0.5 text-green-500")}
@@ -262,7 +264,7 @@ export default function Actionbar({
             <Button
               size="XS"
               theme="light"
-              text="Settings"
+              text={t("settings.nav.general").replace("General","Settings")}
               LeadingIcon={LuSettings}
               onClick={() => {
                   setDisableVideoFocusTrap(true);
@@ -276,7 +278,7 @@ export default function Actionbar({
             <Button
               size="XS"
               theme="light"
-              text="Fullscreen"
+              text={t("kvm.actionbar.fullscreen")}
               LeadingIcon={LuMaximize}
               onClick={() => requestFullscreen()}
             />

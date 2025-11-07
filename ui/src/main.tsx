@@ -29,6 +29,7 @@ import DevicesRoute from "@routes/devices";
 import SettingsIndexRoute from "@routes/devices.$id.settings._index";
 import SettingsAccessIndexRoute from "@routes/devices.$id.settings.access._index";
 import Notifications  from "@/notifications";
+import { I18nProvider } from "@/i18n";
 const SignupRoute = lazy(() => import("@routes/signup"));
 const LoginRoute = lazy(() => import("@routes/login"));
 const DevicesAlreadyAdopted = lazy(() => import("@routes/devices.already-adopted"));
@@ -374,7 +375,7 @@ if (isOnDevice) {
 
 document.addEventListener("DOMContentLoaded", () => {
   ReactDOM.createRoot(document.getElementById("root")!).render(
-    <>
+    <I18nProvider>
       <RouterProvider router={router} />
       <Notifications
         toastOptions={{
@@ -383,7 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }}
         max={2}
       />
-    </>,
+    </I18nProvider>,
   );
 });
 

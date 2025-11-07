@@ -1,0 +1,783 @@
+{
+  "login": {
+    "titleDevice": "Connect your JetKVM to the cloud",
+    "descDevice": "Unlock remote access and advanced features for your device",
+    "actionConnect": "Log in & Connect device",
+    "ctaNoAccount": "Don't have an account?",
+
+    "title": "Log in to your JetKVM account",
+    "desc": "Log in to access and manage your devices securely",
+    "actionLogin": "Log in",
+    "ctaNew": "New to JetKVM?"
+  },
+  "signup": {
+    "titleDevice": "Connect your JetKVM to the cloud",
+    "descDevice": "Unlock remote access and advanced features for your device.",
+    "actionConnect": "Signup & Connect device",
+    "ctaHave": "Already have an account?",
+    "title": "Create your JetKVM account",
+    "desc": "Create your account and start managing your devices with ease.",
+    "actionCreate": "Create Account"
+  },
+  "header": {
+    "loggedInAs": "Logged in as",
+    "logout": "Log out"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "desc": "Customize the look and feel of your JetKVM interface",
+    "themeTitle": "Theme",
+    "themeDesc": "Choose your preferred color theme",
+    "theme": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "languageTitle": "Language",
+    "languageDesc": "Choose interface language",
+    "language": {
+      "en": "English",
+      "zhCN": "Simplified Chinese"
+    }
+  },
+  "loginLocal": {
+    "title": "Welcome back to JetKVM",
+    "desc": "Enter your password to access your JetKVM.",
+    "password": "Password",
+    "placeholder": "Enter your password",
+    "signIn": "Log In",
+    "forgot": "Forgot password?"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "continue": "Continue",
+    "previous": "Previous",
+    "next": "Next",
+    "delete": "Delete",
+    "select": "Select",
+    "learnMore": "Learn more",
+    "tryAgain": "Try again",
+    "troubleshootingGuide": "Troubleshooting Guide"
+  },
+  "devices": {
+    "navCloud": "Cloud Devices",
+    "defaultDeviceName": "JetKVM Device",
+    "title": "Cloud KVMs",
+    "desc": "Manage your cloud KVMs and connect to them securely.",
+    "empty": {
+      "headline": "No devices found",
+      "desc": "You don't have any devices with enabled JetKVM Cloud yet."
+    },
+    "deregister": {
+      "back": "Back to Devices",
+      "headline": "Deregister {name} from your cloud account",
+      "desc": "This will remove the device from your cloud account and revoke remote access to it.\nPlease note that local access will still be possible",
+      "cancel": "Cancel",
+      "submit": "Deregister from Cloud",
+      "error": "There was an error deregistering your device. Please try again."
+    }
+  },
+  "settings": {
+    "backToKvm": "Back to KVM",
+    "nav": {
+      "general": "General",
+      "mouse": "Mouse",
+      "keyboard": "Keyboard",
+      "video": "Video",
+      "hardware": "Hardware",
+      "access": "Access",
+      "appearance": "Appearance",
+      "macros": "Keyboard Macros",
+      "network": "Network",
+      "advanced": "Advanced"
+    },
+    "general": {
+      "title": "General",
+      "desc": "Configure device settings and update preferences",
+      "checkUpdates": "Check for Updates",
+      "app": "App",
+      "system": "System",
+      "loading": "Loading...",
+      "autoUpdate": "Auto Update",
+      "autoUpdateDesc": "Automatically update the device to the latest version",
+      "reboot": "Reboot Device",
+      "rebootDesc": "Power cycle the JetKVM",
+      "setAutoUpdateFailed": "Failed to set auto-update: {reason}"
+    }
+    ,
+    "mouse": {
+      "title": "Mouse",
+      "desc": "Configure cursor behavior and interaction settings for your device",
+      "hideCursorTitle": "Hide Cursor",
+      "hideCursorDesc": "Hide the cursor when sending mouse movements",
+      "scrollTitle": "Scroll Throttling",
+      "scrollDesc": "Reduce the frequency of scroll events",
+      "scroll": {
+        "off": "Off",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "veryHigh": "Very High"
+      },
+      "jigglerTitle": "Jiggler",
+      "jigglerDesc": "Simulate movement of a computer mouse",
+      "preset": {
+        "disabled": "Disabled",
+        "frequent": "Frequent - 30s",
+        "standard": "Standard - 1m",
+        "light": "Light - 5m",
+        "custom": "Custom"
+      },
+      "modesTitle": "Modes",
+      "modesDesc": "Choose the mouse input mode",
+      "absolute": {
+        "title": "Absolute",
+        "subtitle": "Most convenient"
+      },
+      "relative": {
+        "title": "Relative",
+        "subtitle": "Most Compatible"
+      },
+      "notify": {
+        "setStateFail": "Failed to set jiggler state: {reason}",
+        "invalidCron": "Invalid cron expression. Please check your schedule format (e.g., '0 * * * * *' for every minute).",
+        "setConfigFail": "Failed to set jiggler config: {reason}",
+        "configUpdated": "Jiggler Config successfully updated",
+        "setConfigError": "There was an error setting the jiggler config"
+      }
+    },
+    "keyboard": {
+      "title": "Keyboard",
+      "desc": "Configure keyboard settings for your device",
+      "layoutTitle": "Keyboard Layout",
+      "layoutDesc": "Keyboard layout of target operating system",
+      "info": "The virtual keyboard, paste text, and keyboard macros send individual key strokes to the target device. The keyboard layout determines which key codes are being sent. Ensure that the keyboard layout in JetKVM matches the settings in the operating system.",
+      "showPressedTitle": "Show Pressed Keys",
+      "showPressedDesc": "Display currently pressed keys in the status bar",
+      "notify": {
+        "setLayoutFail": "Failed to set keyboard layout: {reason}",
+        "setLayoutOk": "Keyboard layout set successfully to {iso}"
+      }
+    },
+    "video": {
+      "title": "Video",
+      "desc": "Configure display settings and EDID for optimal compatibility",
+      "streamQualityTitle": "Stream Quality",
+      "streamQualityDesc": "Adjust the quality of the video stream",
+      "quality": {"high": "High", "medium": "Medium", "low": "Low"},
+      "enhanceTitle": "Video Enhancement",
+      "enhanceDesc": "Adjust color settings to make the video output more vibrant and colorful",
+      "saturation": "Saturation",
+      "saturationDesc": "Color saturation ({x}x)",
+      "brightness": "Brightness",
+      "brightnessDesc": "Brightness level ({x}x)",
+      "contrast": "Contrast",
+      "contrastDesc": "Contrast level ({x}x)",
+      "reset": "Reset to Default",
+      "edidTitle": "EDID",
+      "edidDesc": "Adjust the EDID settings for the display",
+      "edidCustomTitle": "Custom EDID",
+      "edidCustomDesc": "EDID details video mode compatibility. Default settings works in most cases, but unique UEFI/BIOS might need adjustments.",
+      "edidFileLabel": "EDID File",
+      "edidFilePlaceholder": "00F...",
+      "edidSetCustom": "Set Custom EDID",
+      "edidRestore": "Restore to default",
+      "debugTitle": "Debugging Info",
+      "debugDesc": "Debugging information for video",
+      "debugGet": "Get Debugging Info",
+      "notify": {
+        "getEdidFail": "Failed to get EDID: {reason}",
+        "setQualityFail": "Failed to set stream quality: {reason}",
+        "setQualityOk": "Stream quality set to {label}",
+        "setEdidFail": "Failed to set EDID: {reason}",
+        "setEdidOk": "EDID set successfully"
+      }
+    },
+    "hardware": {
+      "title": "Hardware",
+      "desc": "Configure display settings and hardware options for your JetKVM device",
+      "rotationTitle": "Display Orientation",
+      "rotationDesc": "Set the orientation of the display",
+      "rotation": {"normal": "Normal", "inverted": "Inverted"},
+      "brightnessTitle": "Display Brightness",
+      "brightnessDesc": "Set the brightness of the display",
+      "brightness": {"off": "Off", "low": "Low", "medium": "Medium", "high": "High"},
+      "dimTitle": "Dim Display After",
+      "dimDesc": "Set how long to wait before dimming the display",
+      "offTitle": "Turn off Display After",
+      "offDesc": "Period of inactivity before display automatically turns off",
+      "time": {
+        "never": "Never",
+        "1m": "1 Minute",
+        "5m": "5 Minutes",
+        "10m": "10 Minutes",
+        "30m": "30 Minutes",
+        "1h": "1 Hour"
+      },
+      "wakeInfo": "The display will wake up when the connection state changes, or when touched.",
+      "notify": {
+        "getBacklightFail": "Failed to get backlight settings: {reason}",
+        "setBacklightFail": "Failed to set backlight settings: {reason}",
+        "setBacklightOk": "Backlight settings updated successfully",
+        "setRotationFail": "Failed to set display orientation: {reason}",
+        "setRotationOk": "Display orientation updated successfully"
+      }
+    },
+    "access": {
+      "title": "Access",
+      "desc": "Manage the Access Control of the device",
+      "localTitle": "Local",
+      "localDesc": "Manage the mode of local access to the device",
+      "httpsTitle": "HTTPS Mode",
+      "httpsBadge": "Experimental",
+      "httpsDesc": "Configure secure HTTPS access to your device",
+      "httpsOptions": {"disabled": "Disabled", "self": "Self-signed", "custom": "Custom"},
+      "tlsCertTitle": "TLS Certificate",
+      "tlsCertDesc": "Paste your TLS certificate below. For certificate chains, include the entire chain (leaf, intermediate, and root certificates).",
+      "certLabel": "Certificate",
+      "certPlaceholder": "-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----",
+      "keyLabel": "Private Key",
+      "keyDesc": "For security reasons, it will not be displayed after saving.",
+      "keyPlaceholder": "-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----",
+      "updateTls": "Update TLS Settings",
+      "authModeTitle": "Authentication Mode",
+      "authModeCurr": "Current mode: {mode}",
+      "authPasswordProtected": "Password protected",
+      "authNoPassword": "No password",
+      "disableProtection": "Disable Protection",
+      "enablePassword": "Enable Password",
+      "changePassword": "Change Password",
+      "changePasswordDesc": "Update your device access password",
+      "remoteTitle": "Remote",
+      "remoteDesc": "Manage the mode of Remote access to the device",
+      "cloudProviderTitle": "Cloud Provider",
+      "cloudProviderDesc": "Select the cloud provider for your device",
+      "cloudProvider": {"jetkvm": "JetKVM Cloud", "custom": "Custom"},
+      "cloudApiUrl": "Cloud API URL",
+      "cloudAppUrl": "Cloud App URL",
+      "cloudApiPlaceholder": "https://api.example.com",
+      "cloudAppPlaceholder": "https://app.example.com",
+      "cloudSecurityTitle": "Cloud Security",
+      "cloudSecurityBullets": "End-to-end encryption using WebRTC (DTLS and SRTP)\nZero Trust security model\nOIDC (OpenID Connect) authentication\nAll streams encrypted in transit",
+      "cloudSecurityOpen": "All cloud components are open-source and available on GitHub.",
+      "cloudSecurityLearn": "Learn about our cloud security",
+      "adoptKvm": "Adopt KVM to Cloud",
+      "adopted": "Your device is adopted to the Cloud",
+      "deregister": "De-register from Cloud",
+      "confirmDeregister": "Are you sure you want to de-register this device?",
+      "noDeviceId": "No device ID available",
+      "notify": {
+        "deregisterFail": "Failed to de-register device: {reason}",
+        "updateTlsFail": "Failed to update TLS settings: {reason}",
+        "updateTlsOk": "TLS settings updated successfully",
+        "updateCloudUrlFail": "Failed to update cloud URL: {reason}"
+      },
+      "localAuth": {
+        "createTitle": "Local Device Protection",
+        "createDesc": "Create a password to protect your device from unauthorized local access.",
+        "newPassword": "New Password",
+        "confirmNewPassword": "Confirm New Password",
+        "placeholderNew": "Enter a strong password",
+        "placeholderConfirm": "Re-enter your password",
+        "secureDevice": "Secure Device",
+        "notNow": "Not Now",
+        "deleteTitle": "Disable Local Device Protection",
+        "deleteDesc": "Enter your current password to disable local device protection.",
+        "currentPassword": "Current Password",
+        "placeholderCurrent": "Enter your current password",
+        "disableProtection": "Disable Protection",
+        "cancel": "Cancel",
+        "updateTitle": "Change Local Device Password",
+        "updateDesc": "Enter your current password and a new password to update your local device protection.",
+        "updatePassword": "Update Password",
+        "close": "Close"
+      }
+    },
+    "network": {
+      "title": "Network",
+      "desc": "Configure your network settings",
+      "macTitle": "MAC Address",
+      "macDesc": "Hardware identifier for the network interface",
+      "hostnameTitle": "Hostname",
+      "hostnameDesc": "Device identifier on the network. Blank for system default",
+      "hostnamePlaceholder": "jetkvm",
+      "proxyTitle": "HTTP Proxy",
+      "proxyDesc": "Proxy server for outgoing HTTP(S) requests from the device. Blank for none.",
+      "proxyPlaceholder": "http://proxy.example.com:8080/",
+      "domainTitle": "Domain",
+      "domainDesc": "Network domain suffix for the device",
+      "domain": {"dhcp": "DHCP provided", "local": ".local", "custom": "Custom", "customLabel": "Custom Domain", "customPlaceholder": "home"},
+      "mdnsTitle": "mDNS",
+      "mdnsDesc": "Control mDNS (multicast DNS) operational mode",
+      "mdnsOptions": {"disabled": "Disabled", "auto": "Auto", "ipv4": "IPv4 only", "ipv6": "IPv6 only"},
+      "timeTitle": "Time synchronization",
+      "timeDesc": "Configure time synchronization settings",
+      "timeOptions": {"ntp_only": "NTP only", "ntp_and_http": "NTP and HTTP", "http_only": "HTTP only"},
+      "save": "Save Settings",
+      "ipv4Title": "IPv4 Mode",
+      "ipv4Desc": "Configure the IPv4 mode",
+      "ipv6Title": "IPv6 Mode",
+      "ipv6Desc": "Configure the IPv6 mode",
+      "ipv6InfoTitle": "IPv6 Information",
+      "ipv6InfoDesc": "No IPv6 addresses configured",
+      "lldpTitle": "LLDP",
+      "lldpDesc": "Control which TLVs will be sent over Link Layer Discovery Protocol",
+      "lldpOptions": {"disabled": "Disabled", "basic": "Basic", "all": "All"},
+      "leaseTitle": "DHCP Lease Information",
+      "leaseEmptyTitle": "DHCP Information",
+      "leaseEmptyDesc": "No DHCP lease information available",
+      "confirmRenewTitle": "Renew DHCP Lease",
+      "confirmRenewDesc": "This will request a new IP address from your DHCP server. Your device may temporarily lose network connectivity during this process.",
+      "confirmRenew": "Renew Lease",
+      "lifeTimeNA": "N/A",
+      "lifeTimeFmt": "({date})"
+    },
+    "macros": {
+      "title": "Keyboard Macros",
+      "desc": "Combine keystrokes into a single action for faster workflows.",
+      "add": "Add New Macro",
+      "maxReached": "Max Reached",
+      "loading": "Loading macros...",
+      "emptyTitle": "Create Your First Macro",
+      "emptyDesc": "Combine keystrokes into a single action",
+      "delayOnly": "Delay only",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteTitle": "Delete Macro",
+      "deleteConfirm": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "deleting": "Deleting...",
+      "notify": {
+        "invalid": "Invalid macro data",
+        "max": "Maximum of {max} macros allowed",
+        "dupOk": "Macro \"{name}\" duplicated successfully",
+        "dupFail": "Failed to duplicate macro: {reason}",
+        "dupFailGeneric": "Failed to duplicate macro",
+        "orderOk": "Macro order updated successfully",
+        "orderFail": "Failed to reorder macros: {reason}",
+        "orderFailGeneric": "Failed to reorder macros"
+      },
+      "addPage": {
+        "title": "Add New Macro",
+        "desc": "Create a new keyboard macro",
+        "createOk": "Macro \"{name}\" created successfully",
+        "createFail": "Failed to create macro: {reason}",
+        "createFailGeneric": "Failed to create macro"
+      },
+      "editPage": {
+        "title": "Edit Macro",
+        "desc": "Modify your keyboard macro",
+        "deleteBtn": "Delete Macro",
+        "save": "Save Changes",
+        "updateOk": "Macro \"{name}\" updated successfully",
+        "updateFail": "Failed to update macro: {reason}",
+        "updateFailGeneric": "Failed to update macro",
+        "deleteOk": "Macro \"{name}\" deleted successfully",
+        "deleteFail": "Failed to delete macro: {reason}",
+        "deleteFailGeneric": "Failed to delete macro",
+        "deleteTitle": "Delete Macro",
+        "deleteDesc": "Are you sure you want to delete this macro? This action cannot be undone.",
+        "deleting": "Deleting"
+      }
+    },
+    "update": {
+      "checking": "Checking for updates...",
+      "checkingDesc": "We're ensuring your device has the latest features and improvements.",
+      "cancel": "Cancel",
+      "updatingTitle": "Updating your device",
+      "updatingDesc": "Please don't turn off your device. This process may take a few minutes.",
+      "rebooting": "Rebooting to complete the update...",
+      "system": "System",
+      "app": "App",
+      "linuxSystem": "Linux System Update",
+      "appUpdate": "App Update",
+      "fetching": "Fetching update information...",
+      "downloading": "Downloading {type} update...",
+      "verifying": "Verifying {type} update...",
+      "installing": "Installing {type} update...",
+      "awaitingReboot": "Awaiting reboot",
+      "bg": "Update in Background",
+      "uptodateTitle": "System is up to date",
+      "uptodateDesc": "Your system is running the latest version. No updates are currently available.",
+      "checkAgain": "Check Again",
+      "back": "Back",
+      "availableTitle": "Update available",
+      "availableDesc": "A new update is available to enhance system performance and improve compatibility. We recommend updating to ensure everything runs smoothly.",
+      "availableSystem": "System:",
+      "availableApp": "App:",
+      "updateNow": "Update Now",
+      "later": "Do it later",
+      "completedTitle": "Update Completed Successfully",
+      "completedDesc": "Your device has been successfully updated to the latest version. Enjoy the new features and improvements!",
+      "errorTitle": "Update Error",
+      "errorDesc": "An error occurred while updating your device. Please try again later.",
+      "errorDetails": "Error details: {msg}",
+      "retry": "Retry"
+    },
+    "reboot": {
+      "title": "Reboot JetKVM",
+      "desc": "Do you want to proceed with rebooting the system?",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "status": {
+    "usbTitle": "USB",
+    "usb": {
+      "configured": "Connected",
+      "attached": "Connecting",
+      "addressed": "Connecting",
+      "notAttached": "Disconnected",
+      "suspended": "Low power mode"
+    },
+    "peerTitle": "JetKVM Device",
+    "peer": {
+      "connected": "Connected",
+      "connecting": "Connecting",
+      "disconnected": "Disconnected",
+      "error": "Connection error",
+      "closing": "Closing",
+      "failed": "Connection failed",
+      "closed": "Closed",
+      "new": "Connecting"
+    }
+  },
+  "overlays": {
+    "loadingVideo": "Loading video stream...",
+    "connectingToDevice": "Connecting to device...",
+    "settingRemoteDescription": "Setting remote description",
+    "establishingSecureConnection": "Establishing secure connection...",
+    "connectionEstablished": "Connection established",
+    "gettingRemoteSessionDescription": "Getting remote session description... {attempt}",
+    "connectionIssue": {
+      "title": "Connection Issue Detected",
+      "list": "Verify that the device is powered on and properly connected\nCheck all cable connections for any loose or damaged wires\nEnsure your network connection is stable and active\nTry restarting both the device and your computer"
+    },
+    "retrying": "Retrying connection...",
+    "hdmi": {
+      "noSignalTitle": "No HDMI signal detected.",
+      "noSignalList": "Ensure the HDMI cable securely connected at both ends\nEnsure source device is powered on and outputting a signal\nIf using an adapter, ensure it's compatible and functioning correctly",
+      "errorTitle": "HDMI signal error detected.",
+      "errorList": "A loose or faulty HDMI connection\nIncompatible resolution or refresh rate settings\nIssues with the source device's HDMI output"
+    },
+    "autoplay": {
+      "title": "Autoplay permissions required",
+      "button": "Manually start stream",
+      "desc": "Please adjust browser settings to enable autoplay"
+    },
+    "pointer": {
+      "enableMouse": "Click on the video to enable mouse control"
+    }
+  },
+  "notFound": {
+    "title": "Not found",
+    "desc": "The page you were looking for does not exist."
+  },
+  "kvm": {
+    "actionbar": {
+      "webTerminal": "Web Terminal",
+      "pasteText": "Paste text",
+      "virtualMedia": "Virtual Media",
+      "virtualKeyboard": "Virtual Keyboard",
+      "connectionStats": "Connection Stats",
+      "settings": "Settings",
+      "fullscreen": "Fullscreen",
+      "extension": "Extension",
+      "wakeOnLan": "Wake on LAN"
+    }
+  },
+  "popovers": {
+    "paste": {
+      "title": "Paste text",
+      "desc": "Paste text from your client to the remote host",
+      "label": "Paste from host",
+      "invalidPrefix": "The following characters won't be pasted:",
+      "delayLabel": "Delay between keys",
+      "delayPlaceholder": "Delay between keys",
+      "delayError": "Delay must be between 50 and 65534",
+      "layoutInfo": "Sending text using keyboard layout: {iso}-{name}",
+      "confirm": "Confirm Paste",
+      "notify": {"failed": "Failed to paste text"}
+    },
+    
+    "mount": {
+      "title": "Virtual Media",
+      "desc": "Mount an image to boot from or install an operating system.",
+      "emptyTitle": "No mounted media",
+      "emptyDesc": "Add a file to get started",
+      "httpTitle": "Streaming from URL",
+      "storageTitle": "Mounted from JetKVM Storage",
+      "mountedAs": "Mounted as",
+      "modeDisk": "Disk",
+      "modeCdrom": "CD-ROM",
+      "close": "Close",
+      "unmount": "Unmount",
+      "add": "Add New Media",
+      "notify": {
+        "getStateFail": "Failed to get virtual media state: {reason}",
+        "unmountFail": "Failed to unmount image: {reason}"
+      }
+    },
+
+    "extensions": {
+      "title": "Extensions",
+      "desc": "Load and manage your extensions",
+      "load": "Load",
+      "unload": "Unload Extension",
+      "notify": {
+        "setActiveFail": "Failed to set active extension: {reason}",
+        "unknown": "Unknown error"
+      },
+      "available": {
+        "atxPower": {
+          "name": "ATX Power Control",
+          "desc": "Control your ATX Power extension"
+        },
+        "dcPower": {
+          "name": "DC Power Control",
+          "desc": "Control your DC Power extension"
+        },
+        "serialConsole": {
+          "name": "Serial Console",
+          "desc": "Access your serial console extension"
+        }
+      }
+    },
+
+    "wol": {
+      "title": "Wake On LAN",
+      "desc": "Send a Magic Packet to wake up a remote device.",
+      "empty": {
+        "noDevices": "No devices added",
+        "addHint": "Add a device to start using Wake-on-LAN"
+      },
+      "actions": {
+        "close": "Close",
+        "add": "Add New Device"
+      },
+      "list": {
+        "wake": "Wake",
+        "deleteAria": "Delete device"
+      },
+      "form": {
+        "deviceName": "Device Name",
+        "placeholderName": "Plex Media Server",
+        "mac": "MAC Address",
+        "placeholderMac": "00:b0:d0:63:c2:26",
+        "back": "Back",
+        "save": "Save Device"
+      },
+      "notify": {
+        "invalidMac": "Invalid MAC address",
+        "failedSend": "Failed to send Magic Packet",
+        "sent": "Magic Packet sent successfully",
+        "failedAdd": "Failed to add device",
+        "failedUpdate": "Failed to update Wake-on-LAN devices",
+        "loadFail": "Failed to load Wake-on-LAN devices"
+      }
+    }
+  },
+  "terminal": {
+    "hide": "Hide",
+    "kvmTitle": "KVM Terminal",
+    "serialTitle": "Serial Console"
+  },
+  "sidebar": { "hide": "Hide" },
+  "virtualKeyboard": {
+    "title": "Virtual Keyboard",
+    "hide": "Hide",
+    "attach": "Attach",
+    "detach": "Detach"
+  },
+  "infobar": {
+    "resolution": "Resolution:",
+    "videoSize": "Video Size:",
+    "pointer": "Pointer:",
+    "lastMove": "Last Move:",
+    "usbState": "USB State:",
+    "hdmiState": "HDMI State:",
+    "hidrpcState": "HidRPC State:",
+    "pasteMode": "Paste Mode:",
+    "enabled": "Enabled",
+    "keys": "Keys:",
+    "relayed": "Relayed by Cloudflare",
+    "caps": "Caps Lock",
+    "num": "Num Lock",
+    "scroll": "Scroll Lock",
+    "compose": "Compose",
+    "kana": "Kana",
+    "shift": "Shift",
+    "na": "N/A"
+  },
+  "deviceCard": {
+    "online": "Online",
+    "lastOnline": "Last online {time}",
+    "neverOnline": "Never seen online",
+    "connect": "Connect to KVM",
+    "troubleshoot": "Troubleshoot Connection",
+    "rename": "Rename",
+    "deregister": "Deregister from cloud"
+  },
+  "stats": {
+    "sidebarTitle": "Connection Stats",
+    "connection": {
+      "title": "Connection",
+      "desc": "The connection between the client and the JetKVM.",
+      "rtt": "Round-Trip Time",
+      "rttDesc": "Round-trip time for the active ICE candidate pair between peers."
+    },
+    "video": {
+      "title": "Video",
+      "desc": "The video stream from the JetKVM to the client.",
+      "jitterTitle": "Network Stability",
+      "jitterBadge": "Jitter",
+      "jitterDesc": "How steady the flow of inbound video packets is across the network.",
+      "playbackDelayTitle": "Playback Delay",
+      "playbackDelayDesc": "Delay added by the jitter buffer to smooth playback when frames arrive unevenly.",
+      "playbackDelayBadge": "Jitter Buffer Avg. Delay",
+      "packetsLost": "Packets Lost",
+      "packetsLostDesc": "Count of lost inbound video RTP packets.",
+      "fps": "Frames per second",
+      "fpsDesc": "Number of inbound video frames displayed per second."
+    },
+    "units": {
+      "ms": " ms",
+      "packets": " packets",
+      "fps": " fps"
+    }
+  }
+  ,
+  "mount": {
+    "common": { "backToOverview": "Back to Overview" },
+    "source": {
+      "title": "Virtual Media Source",
+      "desc": "Choose how you want to mount your virtual media",
+      "url": {
+        "label": "URL Mount",
+        "desc": "Mount files from any public web address",
+        "tag": "Experimental"
+      },
+      "storage": {
+        "label": "JetKVM Storage Mount",
+        "desc": "Mount previously uploaded files from the JetKVM storage"
+      }
+    },
+    "url": {
+      "title": "Mount from URL",
+      "desc": "Enter a URL to the image file to mount",
+      "imageUrl": "Image URL",
+      "placeholder": "https://example.com/image.iso",
+      "mountButton": "Mount URL",
+      "popular": {
+        "title": "Popular images",
+        "netbootDesc": "Boot and install various operating systems over network"
+      }
+    },
+    "storage": {
+      "title": "Mount from JetKVM Storage",
+      "desc": "Select an image to mount from the JetKVM storage",
+      "empty": {
+        "title": "No images available",
+        "desc": "Upload an image to start virtual media mounting."
+      },
+      "uploadNew": "Upload a new image",
+      "mountButton": "Mount File",
+      "pagination": "Showing {from} to {to} of {total} results",
+      "available": {
+        "title": "Available Storage",
+        "percentUsed": "{percent}% used",
+        "used": "{size} used",
+        "free": "{size} free"
+      },
+      "continueUploading": "Continue uploading",
+      "confirmDelete": "Are you sure you want to delete {name}?",
+      "notify": {
+        "listError": "Error listing storage files: {reason}",
+        "spaceError": "Error getting storage space: {reason}",
+        "deleteError": "Error deleting file: {reason}"
+      }
+    },
+    "upload": {
+      "title": "Upload New Image",
+      "descDefault": "Select an image file to upload to JetKVM storage",
+      "descContinue": "Continue uploading \"{name}\"",
+      "clickToSelect": "Click to select a file",
+      "clickToSelectSpecific": "Click to select \"{name}\"",
+      "supported": "Supported formats: {formats}",
+      "uploading": "Uploading {name}",
+      "uploadingEllipsis": "Uploading...",
+      "calculating": "Calculating...",
+      "successTitle": "Upload successful",
+      "successDesc": "{name} has been uploaded",
+      "errorPrefix": "Error: {msg}",
+      "cancel": "Cancel Upload",
+      "notify": {
+        "createChannelFail": "Failed to create data channel for file upload",
+        "uploadFail": "Upload failed: {reason}",
+        "xhrError": "Upload failed: {reason}"
+      }
+    },
+    "usbMode": {
+      "label": "Mount as",
+      "cd": "CD/DVD",
+      "disk": "Disk"
+    },
+    "error": {
+      "title": "Mount Error",
+      "desc": "An error occurred while attempting to mount the media. Please try again."
+    }
+  },
+  "extensions": {
+    "common": { "unknown": "Unknown error" },
+    "atx": {
+      "title": "ATX Power Control",
+      "desc": "Control your ATX power settings",
+      "power": "Power",
+      "reset": "Reset",
+      "powerLed": "Power LED",
+      "hddLed": "HDD LED",
+      "notify": {
+        "getStateFail": "Failed to get ATX state: {reason}",
+        "actionFail": "Failed to send ATX power action: {reason}"
+      }
+    },
+    "dc": {
+      "title": "DC Power Control",
+      "desc": "Control your DC power settings",
+      "powerOn": "Power On",
+      "powerOff": "Power Off",
+      "restoreLabel": "Restore Power Loss",
+      "restore": {
+        "off": "Power OFF",
+        "on": "Power ON",
+        "last": "Last State"
+      },
+      "voltage": "Voltage",
+      "current": "Current",
+      "power": "Power",
+      "notify": {
+        "getStateFail": "Failed to get DC power state: {reason}",
+        "setStateFail": "Failed to set DC power state: {reason}",
+        "setRestoreFail": "Failed to set restore state: {reason}"
+      }
+    },
+    "serial": {
+      "title": "Serial Console",
+      "desc": "Configure your serial console settings",
+      "open": "Open Console",
+      "baudRate": "Baud Rate",
+      "dataBits": "Data Bits",
+      "stopBits": "Stop Bits",
+      "parity": "Parity",
+      "parityNone": "None",
+      "parityEven": "Even",
+      "parityOdd": "Odd",
+      "notify": {
+        "getSettingsFail": "Failed to get serial settings: {reason}",
+        "updateSettingsFail": "Failed to update serial settings: {reason}"
+      }
+    }
+  }
+}

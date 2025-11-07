@@ -1,25 +1,30 @@
 package kvm
 
 import (
-	"bufio"
-	"io"
-	"strconv"
-	"strings"
-	"time"
+    "bufio"
+    "errors"
+    "io"
+    "strconv"
+    "strings"
+    "time"
 
-	"github.com/pion/webrtc/v4"
-	"go.bug.st/serial"
+    "github.com/pion/webrtc/v4"
+    "go.bug.st/serial"
 )
 
 const serialPortPath = "/dev/ttyS3"
 
 var port serial.Port
+var ErrSerialUnavailable = errors.New("serial port unavailable")
 
 func mountATXControl() error {
-	_ = port.SetMode(defaultMode)
-	go runATXControl()
+    if port == nil {
+        return ErrSerialUnavailable
+    }
+    _ = port.SetMode(defaultMode)
+    go runATXControl()
 
-	return nil
+    return nil
 }
 
 func unmountATXControl() error {
@@ -85,7 +90,10 @@ func runATXControl() {
 }
 
 func pressATXPowerButton(duration time.Duration) error {
-	_, err := port.Write([]byte("\n"))
+    if port == nil {
+        return ErrSerialUnavailable
+    }
+    _, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -106,7 +114,10 @@ func pressATXPowerButton(duration time.Duration) error {
 }
 
 func pressATXResetButton(duration time.Duration) error {
-	_, err := port.Write([]byte("\n"))
+    if port == nil {
+        return ErrSerialUnavailable
+    }
+    _, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -127,10 +138,13 @@ func pressATXResetButton(duration time.Duration) error {
 }
 
 func mountDCControl() error {
-	_ = port.SetMode(defaultMode)
-	registerDCMetrics()
-	go runDCControl()
-	return nil
+    if port == nil {
+        return ErrSerialUnavailable
+    }
+    _ = port.SetMode(defaultMode)
+    registerDCMetrics()
+    go runDCControl()
+    return nil
 }
 
 func unmountDCControl() error {
@@ -217,7 +231,10 @@ func runDCControl() {
 }
 
 func setDCPowerState(on bool) error {
-	_, err := port.Write([]byte("\n"))
+    if port == nil {
+        return ErrSerialUnavailable
+    }
+    _, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -233,7 +250,10 @@ func setDCPowerState(on bool) error {
 }
 
 func setDCRestoreState(state int) error {
-	_, err := port.Write([]byte("\n"))
+    if port == nil {
+        return ErrSerialUnavailable
+    }
+    _, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -269,44 +289,63 @@ func initSerialPort() {
 }
 
 func reopenSerialPort() error {
-	if port != nil {
-		port.Close()
-	}
-	var err error
-	port, err = serial.Open(serialPortPath, defaultMode)
-	if err != nil {
-		serialLogger.Error().
-			Err(err).
-			Str("path", serialPortPath).
-			Interface("mode", defaultMode).
-			Msg("Error opening serial port")
-	}
-	return nil
+    if port != nil {
+        port.Close()
+    }
+    var err error
+    port, err = serial.Open(serialPortPath, defaultMode)
+    if err != nil {
+        // keep port nil on failure and propagate error
+        port = nil
+        serialLogger.Error().
+            Err(err).
+            Str("path", serialPortPath).
+            Interface("mode", defaultMode).
+            Msg("Error opening serial port")
+        return err
+    }
+    return nil
 }
 
 func handleSerialChannel(d *webrtc.DataChannel) {
 	scopedLogger := serialLogger.With().
 		Uint16("data_channel_id", *d.ID()).Logger()
 
-	d.OnOpen(func() {
-		go func() {
-			buf := make([]byte, 1024)
-			for {
-				n, err := port.Read(buf)
-				if err != nil {
-					if err != io.EOF {
-						scopedLogger.Warn().Err(err).Msg("Failed to read from serial port")
-					}
-					break
-				}
-				err = d.Send(buf[:n])
-				if err != nil {
-					scopedLogger.Warn().Err(err).Msg("Failed to send serial output")
-					break
-				}
-			}
-		}()
-	})
+    d.OnOpen(func() {
+        go func() {
+            defer func() {
+                if r := recover(); r != nil {
+                    scopedLogger.Error().Interface("panic", r).Msg("Recovered in serial reader loop")
+                }
+            }()
+
+            // Ensure serial port is available before starting the read loop
+            if port == nil {
+                _ = reopenSerialPort()
+            }
+            if port == nil {
+                scopedLogger.Warn().Msg("Serial port unavailable; closing serial data channel")
+                _ = d.Close()
+                return
+            }
+
+            buf := make([]byte, 1024)
+            for {
+                n, err := port.Read(buf)
+                if err != nil {
+                    if err != io.EOF {
+                        scopedLogger.Warn().Err(err).Msg("Failed to read from serial port")
+                    }
+                    break
+                }
+                err = d.Send(buf[:n])
+                if err != nil {
+                    scopedLogger.Warn().Err(err).Msg("Failed to send serial output")
+                    break
+                }
+            }
+        }()
+    })
 
 	d.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if port == nil {

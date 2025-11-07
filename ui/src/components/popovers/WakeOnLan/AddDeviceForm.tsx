@@ -3,6 +3,7 @@ import { LuPlus, LuArrowLeft } from "react-icons/lu";
 
 import { InputFieldWithLabel } from "@/components/InputField";
 import { Button } from "@/components/Button";
+import { useI18n } from "@/i18n";
 
 interface AddDeviceFormProps {
   onAddDevice: (name: string, macAddress: string) => void;
@@ -17,6 +18,7 @@ export default function AddDeviceForm({
   errorMessage,
   setErrorMessage,
 }: AddDeviceFormProps) {
+  const { t } = useI18n();
   const [isDeviceNameValid, setIsDeviceNameValid] = useState<boolean>(false);
   const [isMacAddressValid, setIsMacAddressValid] = useState<boolean>(false);
 
@@ -34,8 +36,8 @@ export default function AddDeviceForm({
       >
         <InputFieldWithLabel
           ref={nameInputRef}
-          placeholder="Plex Media Server"
-          label="Device Name"
+          placeholder={t("popovers.wol.form.placeholderName")}
+          label={t("popovers.wol.form.deviceName")}
           required
           onChange={e => {
             setIsDeviceNameValid(e.target.validity.valid);
@@ -45,8 +47,8 @@ export default function AddDeviceForm({
         />
         <InputFieldWithLabel
           ref={macInputRef}
-          placeholder="00:b0:d0:63:c2:26"
-          label="MAC Address"
+          placeholder={t("popovers.wol.form.placeholderMac")}
+          label={t("popovers.wol.form.mac")}
           onKeyUp={e => e.stopPropagation()}
           required
           pattern="^([0-9a-fA-F][0-9a-fA-F]:){5}([0-9a-fA-F][0-9a-fA-F])$"
@@ -82,14 +84,14 @@ export default function AddDeviceForm({
         <Button
           size="SM"
           theme="light"
-          text="Back"
+          text={t("popovers.wol.form.back")}
           LeadingIcon={LuArrowLeft}
           onClick={() => setShowAddForm(false)}
         />
         <Button
           size="SM"
           theme="primary"
-          text="Save Device"
+          text={t("popovers.wol.form.save")}
           disabled={!isDeviceNameValid || !isMacAddressValid}
           onClick={() => {
             const deviceName = nameInputRef.current?.value || "";

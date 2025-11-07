@@ -14,12 +14,14 @@ import { GridCard } from "@components/Card";
 import { InputFieldWithLabel } from "@components/InputField";
 import { SettingsPageHeader } from "@components/SettingsPageheader";
 import { TextAreaWithLabel } from "@components/TextArea";
+import { useI18n } from "@/i18n";
 
 // uint32 max value / 4
 const pasteMaxLength = 1073741824;
 const defaultDelay = 20;
 
 export default function PasteModal() {
+  const { t } = useI18n();
   const TextAreaRef = useRef<HTMLTextAreaElement>(null);
   const { isPasteInProgress } = useHidStore();
   const { setDisableVideoFocusTrap } = useUiStore();
@@ -105,7 +107,7 @@ export default function PasteModal() {
       }
     } catch (error) {
       console.error("Failed to paste text:", error);
-      notifications.error("Failed to paste text");
+      notifications.error(t("popovers.paste.notify.failed"));
     }
   }, [selectedKeyboard, executeMacro, delay]);
 
@@ -122,8 +124,8 @@ export default function PasteModal() {
           <div className="h-full space-y-4">
             <div className="space-y-4">
               <SettingsPageHeader
-                title="Paste text"
-                description="Paste text from your client to the remote host"
+                title={t("popovers.paste.title")}
+                description={t("popovers.paste.desc")}
               />
 
               <div
@@ -143,7 +145,7 @@ export default function PasteModal() {
                   >
                     <TextAreaWithLabel
                       ref={TextAreaRef}
-                      label="Paste from host"
+                      label={t("popovers.paste.label")}
                       rows={4}
                       onKeyUp={e => e.stopPropagation()}
                       maxLength={pasteMaxLength}
@@ -176,8 +178,7 @@ export default function PasteModal() {
                       <div className="mt-2 flex items-center gap-x-2">
                         <ExclamationCircleIcon className="h-4 w-4 text-red-500 dark:text-red-400" />
                         <span className="text-xs text-red-500 dark:text-red-400">
-                          The following characters won&apos;t be pasted:{" "}
-                          {invalidChars.join(", ")}
+                          {t("popovers.paste.invalidPrefix")} {invalidChars.join(", ")}
                         </span>
                       </div>
                     )}
@@ -186,8 +187,8 @@ export default function PasteModal() {
                 <div className={cx("text-xs text-slate-600 dark:text-slate-400", delayClassName)}>
                   <InputFieldWithLabel
                     type="number"
-                    label="Delay between keys"
-                    placeholder="Delay between keys"
+                    label={t("popovers.paste.delayLabel")}
+                    placeholder={t("popovers.paste.delayPlaceholder")}
                     min={50}
                     max={65534}
                     value={delayValue}
@@ -199,15 +200,14 @@ export default function PasteModal() {
                     <div className="mt-2 flex items-center gap-x-2">
                       <ExclamationCircleIcon className="h-4 w-4 text-red-500 dark:text-red-400" />
                       <span className="text-xs text-red-500 dark:text-red-400">
-                        Delay must be between 50 and 65534
+                        {t("popovers.paste.delayError")}
                       </span>
                     </div>
                   )}
                 </div>
                 <div className="space-y-4">
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Sending text using keyboard layout: {selectedKeyboard.isoCode}-
-                    {selectedKeyboard.name}
+                    {t("popovers.paste.layoutInfo", { iso: selectedKeyboard.isoCode, name: selectedKeyboard.name })}
                   </p>
                 </div>
               </div>
@@ -224,7 +224,7 @@ export default function PasteModal() {
           <Button
             size="SM"
             theme="blank"
-            text="Cancel"
+            text={t("common.cancel")}
             onClick={() => {
               onCancelPasteMode();
               close();
@@ -233,7 +233,7 @@ export default function PasteModal() {
           <Button
             size="SM"
             theme="primary"
-            text="Confirm Paste"
+            text={t("popovers.paste.confirm")}
             disabled={isPasteInProgress}
             onClick={onConfirmPaste}
             LeadingIcon={LuCornerDownLeft}

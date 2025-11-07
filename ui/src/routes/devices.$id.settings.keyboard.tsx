@@ -8,8 +8,10 @@ import { SettingsPageHeader } from "@components/SettingsPageheader";
 import { Checkbox } from "@/components/Checkbox";
 import { SelectMenuBasic } from "@/components/SelectMenuBasic";
 import notifications from "@/notifications";
+import { useI18n } from "@/i18n";
 
 export default function SettingsKeyboardRoute() {
+  const { t } = useI18n();
   const { setKeyboardLayout } = useSettingsStore();
   const { showPressedKeys, setShowPressedKeys } = useSettingsStore();
   const { selectedKeyboard, keyboardOptions } = useKeyboardLayout();
@@ -33,10 +35,10 @@ export default function SettingsKeyboardRoute() {
       send("setKeyboardLayout", { layout: isoCode }, resp => {
         if ("error" in resp) {
           notifications.error(
-            `Failed to set keyboard layout: ${resp.error.data || "Unknown error"}`,
+            t("settings.keyboard.notify.setLayoutFail", { reason: resp.error.data || "Unknown error" }),
           );
         }
-        notifications.success("Keyboard layout set successfully to " + isoCode);
+        notifications.success(t("settings.keyboard.notify.setLayoutOk", { iso: isoCode }));
         setKeyboardLayout(isoCode);
       });
     },
@@ -46,14 +48,14 @@ export default function SettingsKeyboardRoute() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="Keyboard"
-        description="Configure keyboard settings for your device"
+        title={t("settings.keyboard.title")}
+        description={t("settings.keyboard.desc")}
       />
 
       <div className="space-y-4">
         <SettingsItem
-          title="Keyboard Layout"
-          description="Keyboard layout of target operating system"
+          title={t("settings.keyboard.layoutTitle")}
+          description={t("settings.keyboard.layoutDesc")}
         >
           <SelectMenuBasic
             size="SM"
@@ -65,14 +67,14 @@ export default function SettingsKeyboardRoute() {
           />
         </SettingsItem>
         <p className="text-xs text-slate-600 dark:text-slate-400">
-          The virtual keyboard, paste text, and keyboard macros send individual key strokes to the target device. The keyboard layout determines which key codes are being sent. Ensure that the keyboard layout in JetKVM matches the settings in the operating system.
+          {t("settings.keyboard.info")}
         </p>
       </div>
 
       <div className="space-y-4">
         <SettingsItem
-          title="Show Pressed Keys"
-          description="Display currently pressed keys in the status bar"
+          title={t("settings.keyboard.showPressedTitle")}
+          description={t("settings.keyboard.showPressedDesc")}
         >
           <Checkbox
             checked={showPressedKeys}

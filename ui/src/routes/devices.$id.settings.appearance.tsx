@@ -4,8 +4,10 @@ import { SettingsItem } from "@components/SettingsItem";
 
 import { SettingsPageHeader } from "../components/SettingsPageheader";
 import { SelectMenuBasic } from "../components/SelectMenuBasic";
+import { useI18n } from "@/i18n";
 
 export default function SettingsAppearanceRoute() {
+  const { lang, setLang, t } = useI18n();
   const [currentTheme, setCurrentTheme] = useState(() => {
     return localStorage.theme || "system";
   });
@@ -31,23 +33,35 @@ export default function SettingsAppearanceRoute() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="Appearance"
-        description="Customize the look and feel of your JetKVM interface"
+        title={t("appearance.title")}
+        description={t("appearance.desc")}
       />
-      <SettingsItem title="Theme" description="Choose your preferred color theme">
+      <SettingsItem title={t("appearance.themeTitle")} description={t("appearance.themeDesc") }>
         <SelectMenuBasic
           size="SM"
           label=""
           value={currentTheme}
           options={[
-            { value: "system", label: "System" },
-            { value: "light", label: "Light" },
-            { value: "dark", label: "Dark" },
+            { value: "system", label: t("appearance.theme.system") },
+            { value: "light", label: t("appearance.theme.light") },
+            { value: "dark", label: t("appearance.theme.dark") },
           ]}
           onChange={e => {
             setCurrentTheme(e.target.value);
             handleThemeChange(e.target.value);
           }}
+        />
+      </SettingsItem>
+      <SettingsItem title={t("appearance.languageTitle")} description={t("appearance.languageDesc") }>
+        <SelectMenuBasic
+          size="SM"
+          label=""
+          value={lang}
+          options={[
+            { value: "en", label: t("appearance.language.en") },
+            { value: "zh-CN", label: t("appearance.language.zhCN") },
+          ]}
+          onChange={e => setLang(e.target.value as "en" | "zh-CN")}
         />
       </SettingsItem>
     </div>

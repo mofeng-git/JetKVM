@@ -12,6 +12,7 @@ import { cx } from "@/cva.config";
 import { AvailableTerminalTypes, useUiStore } from "@/hooks/stores";
 
 import { Button } from "./Button";
+import { useI18n } from "@/i18n";
 
 const isWebGl2Supported = !!document.createElement("canvas").getContext("webgl2");
 
@@ -166,6 +167,7 @@ function Terminal({
       onKeyDown={e => e.stopPropagation()}
       onKeyUp={e => e.stopPropagation()}
     >
+      { /* i18n hook used inline for button label */ }
       <div>
         <div
           className={cx(
@@ -191,7 +193,7 @@ function Terminal({
                 <Button
                   size="XS"
                   theme="light"
-                  text="Hide"
+                  text={useI18n().t("terminal.hide")}
                   LeadingIcon={ChevronDownIcon}
                   onClick={() => setTerminalType("none")}
                 />

@@ -1,21 +1,21 @@
 package kvm
 
 import (
-	"bytes"
-	"context"
-	"embed"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io/fs"
-	"net/http"
-	"net/http/pprof"
-	"path/filepath"
-	"slices"
-	"strings"
-	"time"
+    "bytes"
+    "context"
+    "embed"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "io/fs"
+    "net/http"
+    "net/http/pprof"
+    "path/filepath"
+    "slices"
+    "strings"
+    "time"
 
-	"github.com/coder/websocket"
+    "github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 	gin_logger "github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
@@ -24,9 +24,11 @@ import (
 	"github.com/pion/webrtc/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/zerolog"
-	"github.com/vearutop/statigz"
-	"golang.org/x/crypto/bcrypt"
+    "github.com/rs/zerolog"
+    "github.com/vearutop/statigz"
+    "golang.org/x/crypto/bcrypt"
+    "os"
+    "strconv"
 )
 
 //nolint:typecheck
@@ -563,13 +565,20 @@ func basicAuthProtectedMiddleware(requireDeveloperMode bool) gin.HandlerFunc {
 }
 
 func RunWebServer() {
-	r := setupRouter()
+    r := setupRouter()
 
-	// Determine the binding address based on the config
-	var bindAddress string
-	listenPort := 80 // default port
-	useIPv4 := config.NetworkConfig.IPv4Mode.String != "disabled"
-	useIPv6 := config.NetworkConfig.IPv6Mode.String != "disabled"
+    // Determine the binding address based on the config
+    var bindAddress string
+    listenPort := 80 // default port
+    if p := os.Getenv("JETKVM_HTTP_PORT"); p != "" {
+        if v, err := strconv.Atoi(p); err == nil && v > 0 && v < 65536 {
+            listenPort = v
+        } else {
+            logger.Warn().Str("JETKVM_HTTP_PORT", p).Msg("invalid port; falling back to 80")
+        }
+    }
+    useIPv4 := config.NetworkConfig.IPv4Mode.String != "disabled"
+    useIPv6 := config.NetworkConfig.IPv6Mode.String != "disabled"
 
 	if config.LocalLoopbackOnly {
 		if useIPv4 && useIPv6 {
@@ -589,10 +598,10 @@ func RunWebServer() {
 		}
 	}
 
-	logger.Info().Str("bindAddress", bindAddress).Bool("loopbackOnly", config.LocalLoopbackOnly).Msg("Starting web server")
-	if err := r.Run(bindAddress); err != nil {
-		panic(err)
-	}
+    logger.Info().Str("bindAddress", bindAddress).Int("port", listenPort).Bool("loopbackOnly", config.LocalLoopbackOnly).Msg("Starting web server")
+    if err := r.Run(bindAddress); err != nil {
+        panic(err)
+    }
 }
 
 func handleDevice(c *gin.Context) {

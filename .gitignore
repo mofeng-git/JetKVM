@@ -10,6 +10,9 @@ static/*
 device-tests.tar.gz
 node_modules
 
+build-ninja
+docs
+
 # generated during the build process
 #internal/native/include
 #internal/native/lib

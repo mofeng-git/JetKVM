@@ -10,9 +10,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Circular", sans-serif;
-  --font-display: "Circular", sans-serif;
-  --font-serif: "Circular", serif;
+  /* Add CJK-safe fallbacks to avoid tofu when rendering Chinese */
+  --font-sans: "Circular", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Circular", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Circular", "Noto Serif SC", STSong, "Songti SC", serif;
   --font-mono: "Source Code Pro Variable", monospace;
 
   --grid-layout: auto 1fr auto;

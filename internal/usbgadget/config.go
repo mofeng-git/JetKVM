@@ -175,9 +175,40 @@ func (u *UsbGadget) Init() error {
 		return u.logWarn("no udc found, skipping USB stack init", nil)
 	}
 
-	u.udc = udcs[0]
+	// Log discovered UDCs
+	u.log.Info().Strs("udcs", udcs).Msg("discovered UDCs")
 
-	err := u.configureUsbGadget(false)
+	// If a specific UDC override is provided and valid, use it.
+	if u.udcOverride != "" {
+		found := false
+		for _, n := range udcs {
+			if n == u.udcOverride {
+				found = true
+				break
+			}
+		}
+		if found {
+			u.udc = u.udcOverride
+			u.log.Info().Str("udc", u.udc).Msg("using UDC override from config")
+		} else {
+			u.log.Warn().Str("override", u.udcOverride).Strs("available", udcs).Msg("UDC override not found; falling back to auto-selection")
+		}
+	}
+
+	if u.udc == "" {
+		// Deterministic selection: pick the first after sorting in getUdcs().
+		u.udc = udcs[0]
+	}
+
+	// Resolve driver path for bind/unbind operations.
+	drv, err := resolveUDCDriverPath(u.udc)
+	if err != nil {
+		return u.logError("failed to resolve UDC driver path", err)
+	}
+	u.udcDriverPath = drv
+	u.log.Info().Str("udc", u.udc).Str("driver_path", u.udcDriverPath).Msg("selected UDC")
+
+	err = u.configureUsbGadget(false)
 	if err != nil {
 		return u.logError("unable to initialize USB stack", err)
 	}

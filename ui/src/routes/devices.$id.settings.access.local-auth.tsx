@@ -6,6 +6,7 @@ import { InputFieldWithLabel } from "@/components/InputField";
 import api from "@/api";
 import { useLocalAuthModalStore } from "@/hooks/stores";
 import { useDeviceUiNavigation } from "@/hooks/useAppNavigation";
+import { useI18n } from "@/i18n";
 
 export default function SecurityAccessLocalAuthRoute() {
   const { setModalView } = useLocalAuthModalStore();
@@ -187,6 +188,7 @@ function CreatePasswordModal({
 }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
@@ -198,24 +200,24 @@ function CreatePasswordModal({
       >
         <div>
           <h2 className="text-lg font-semibold dark:text-white">
-            Local Device Protection
+            {t("settings.access.localAuth.createTitle")}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Create a password to protect your device from unauthorized local access.
+            {t("settings.access.localAuth.createDesc")}
           </p>
         </div>
         <InputFieldWithLabel
-          label="New Password"
+          label={t("settings.access.localAuth.newPassword")}
           type="password"
-          placeholder="Enter a strong password"
+          placeholder={t("settings.access.localAuth.placeholderNew")}
           value={password}
           autoFocus
           onChange={e => setPassword(e.target.value)}
         />
         <InputFieldWithLabel
-          label="Confirm New Password"
+          label={t("settings.access.localAuth.confirmNewPassword")}
           type="password"
-          placeholder="Re-enter your password"
+          placeholder={t("settings.access.localAuth.placeholderConfirm")}
           value={confirmPassword}
           onChange={e => setConfirmPassword(e.target.value)}
         />
@@ -224,10 +226,10 @@ function CreatePasswordModal({
           <Button
             size="SM"
             theme="primary"
-            text="Secure Device"
+            text={t("settings.access.localAuth.secureDevice")}
             onClick={() => onSetPassword(password, confirmPassword)}
           />
-          <Button size="SM" theme="light" text="Not Now" onClick={onCancel} />
+          <Button size="SM" theme="light" text={t("settings.access.localAuth.notNow")} onClick={onCancel} />
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
       </form>
@@ -245,22 +247,23 @@ function DeletePasswordModal({
   error: string | null;
 }) {
   const [password, setPassword] = useState("");
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold dark:text-white">
-            Disable Local Device Protection
+            {t("settings.access.localAuth.deleteTitle")}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Enter your current password to disable local device protection.
+            {t("settings.access.localAuth.deleteDesc")}
           </p>
         </div>
         <InputFieldWithLabel
-          label="Current Password"
+          label={t("settings.access.localAuth.currentPassword")}
           type="password"
-          placeholder="Enter your current password"
+          placeholder={t("settings.access.localAuth.placeholderCurrent")}
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
@@ -268,10 +271,10 @@ function DeletePasswordModal({
           <Button
             size="SM"
             theme="danger"
-            text="Disable Protection"
+            text={t("settings.access.localAuth.disableProtection")}
             onClick={() => onDeletePassword(password)}
           />
-          <Button size="SM" theme="light" text="Cancel" onClick={onCancel} />
+          <Button size="SM" theme="light" text={t("settings.access.localAuth.cancel")} onClick={onCancel} />
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
       </div>
@@ -295,6 +298,7 @@ function UpdatePasswordModal({
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col items-start justify-start space-y-4 text-left">
@@ -306,31 +310,30 @@ function UpdatePasswordModal({
       >
         <div>
           <h2 className="text-lg font-semibold dark:text-white">
-            Change Local Device Password
+            {t("settings.access.localAuth.updateTitle")}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Enter your current password and a new password to update your local device
-            protection.
+            {t("settings.access.localAuth.updateDesc")}
           </p>
         </div>
         <InputFieldWithLabel
-          label="Current Password"
+          label={t("settings.access.localAuth.currentPassword")}
           type="password"
-          placeholder="Enter your current password"
+          placeholder={t("settings.access.localAuth.placeholderCurrent")}
           value={oldPassword}
           onChange={e => setOldPassword(e.target.value)}
         />
         <InputFieldWithLabel
-          label="New Password"
+          label={t("settings.access.localAuth.newPassword")}
           type="password"
-          placeholder="Enter a new strong password"
+          placeholder={t("settings.access.localAuth.placeholderNew")}
           value={newPassword}
           onChange={e => setNewPassword(e.target.value)}
         />
         <InputFieldWithLabel
-          label="Confirm New Password"
+          label={t("settings.access.localAuth.confirmNewPassword")}
           type="password"
-          placeholder="Re-enter your new password"
+          placeholder={t("settings.access.localAuth.placeholderConfirm")}
           value={confirmNewPassword}
           onChange={e => setConfirmNewPassword(e.target.value)}
         />
@@ -338,10 +341,10 @@ function UpdatePasswordModal({
           <Button
             size="SM"
             theme="primary"
-            text="Update Password"
+            text={t("settings.access.localAuth.updatePassword")}
             onClick={() => onUpdatePassword(oldPassword, newPassword, confirmNewPassword)}
           />
-          <Button size="SM" theme="light" text="Cancel" onClick={onCancel} />
+          <Button size="SM" theme="light" text={t("settings.access.localAuth.cancel")} onClick={onCancel} />
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
       </form>
@@ -365,7 +368,7 @@ function SuccessModal({
           <h2 className="text-lg font-semibold dark:text-white">{headline}</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">{description}</p>
         </div>
-        <Button size="SM" theme="primary" text="Close" onClick={onClose} />
+        <Button size="SM" theme="primary" text={useI18n().t("settings.access.localAuth.close")} onClick={onClose} />
       </div>
     </div>
   );

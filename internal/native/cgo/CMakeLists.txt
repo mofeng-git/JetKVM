@@ -6,7 +6,10 @@ project(jknative LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Rockchip SDK paths
+option(USE_RK "Build with Rockchip media SDK (RV1106)" ON)
+option(USE_LVGL "Build with LVGL UI (requires lvgl)" ON)
+
+# Rockchip SDK paths (used only when USE_RK=ON)
 set(RK_SDK_BASE "/opt/jetkvm-native-buildkit")
 set(RK_MEDIA_OUTPUT "${RK_SDK_BASE}/media/out")
 set(RK_MEDIA_INCLUDE_PATH "${RK_MEDIA_OUTPUT}/include")
@@ -28,44 +31,72 @@ set(LV_BUILD_DEFCONFIG_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lvgl_defconfig CACHE PAT
 # )
 
 
-# Fetch LVGL from GitHub
-FetchContent_Declare(
-    lvgl
-    GIT_REPOSITORY https://github.com/lvgl/lvgl.git
-    GIT_TAG v9.3.0
-    GIT_SHALLOW 1
-    UPDATE_DISCONNECTED 1
-    PATCH_COMMAND patch -p1 -f < ${CMAKE_CURRENT_SOURCE_DIR}/lvgl-minify.patch && cat ${CMAKE_CURRENT_SOURCE_DIR}/lvgl-minify.del | xargs rm -v
-    )
-FetchContent_MakeAvailable(lvgl)
+if(USE_LVGL)
+    # Fetch LVGL from GitHub
+    FetchContent_Declare(
+        lvgl
+        GIT_REPOSITORY https://github.com/lvgl/lvgl.git
+        GIT_TAG v9.3.0
+        GIT_SHALLOW 1
+        UPDATE_DISCONNECTED 1
+        PATCH_COMMAND patch -p1 -f < ${CMAKE_CURRENT_SOURCE_DIR}/lvgl-minify.patch && cat ${CMAKE_CURRENT_SOURCE_DIR}/lvgl-minify.del | xargs rm -v
+        )
+    FetchContent_MakeAvailable(lvgl)
+endif()
 
 # Get source files, excluding CMake generated files
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "*.c" "ui/*.c")
 list(FILTER sources EXCLUDE REGEX "CMakeFiles.*CompilerId.*\\.c$")
 
+# When building UVC-only (no RK), drop rk-dependent implementation file video.c
+if(NOT USE_RK)
+    list(FILTER sources EXCLUDE REGEX "/video\\.c$")
+    list(APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/video_uvconly.c)
+else()
+    # RK build: exclude UVC backend and UVC-only shim
+    list(FILTER sources EXCLUDE REGEX "/uvc_backend\\.c$")
+    list(FILTER sources EXCLUDE REGEX "/video_uvconly\\.c$")
+endif()
+
+# When not using LVGL, drop UI and lvgl-dependent sources and use ctrl_stub
+if(NOT USE_LVGL)
+    list(FILTER sources EXCLUDE REGEX "/ui/.*")
+    list(FILTER sources EXCLUDE REGEX "/screen\\.c$")
+    list(FILTER sources EXCLUDE REGEX "/ctrl\\.c$")
+    list(FILTER sources EXCLUDE REGEX "/edid\\.c$")
+    list(FILTER sources EXCLUDE REGEX "/ui_index\\.c$")
+    list(APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/ctrl_stub.c)
+endif()
+
 add_library(jknative STATIC ${sources} ${CMAKE_CURRENT_SOURCE_DIR}/ctrl.h)
 
 # Include directories
-target_include_directories(jknative PRIVATE
-    ${RK_MEDIA_INCLUDE_PATH}
-    ${RK_MEDIA_INCLUDE_PATH}/libdrm
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/ui
-    ${CMAKE_CURRENT_BINARY_DIR}/deps/libgpiod/include
-)
+target_include_directories(jknative PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/deps/libgpiod/include)
+if(USE_LVGL)
+    target_include_directories(jknative PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ui)
+endif()
+if(USE_RK)
+    target_include_directories(jknative PRIVATE
+        ${RK_MEDIA_INCLUDE_PATH}
+        ${RK_MEDIA_INCLUDE_PATH}/libdrm
+    )
+endif()
 
 # Set library search path
-target_link_directories(jknative PRIVATE ${RK_APP_MEDIA_LIBS_PATH})
+if(USE_RK)
+    target_link_directories(jknative PRIVATE ${RK_APP_MEDIA_LIBS_PATH})
+endif()
 # target_link_directories(jknative PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/deps/libgpiod/lib)
 
-target_link_libraries(jknative PRIVATE
-    lvgl::lvgl 
-    pthread
-    rockit
-    rockchip_mpp
-    rga
-    m
-    # libgpiod
-)
+target_link_libraries(jknative PRIVATE pthread m)
+if(NOT USE_RK)
+    target_link_libraries(jknative PRIVATE x264 turbojpeg)
+endif()
+if(USE_LVGL)
+    target_link_libraries(jknative PRIVATE lvgl::lvgl)
+endif()
+if(USE_RK)
+    target_link_libraries(jknative PRIVATE rockit rockchip_mpp rga)
+endif()
 
 install(TARGETS jknative DESTINATION lib)

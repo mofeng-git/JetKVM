@@ -6,8 +6,10 @@ import { someIterable } from "@/utils";
 
 import { createChartArray, Metric } from "../Metric";
 import { SettingsSectionHeader } from "../SettingsSectionHeader";
+import { useI18n } from "@/i18n";
 
 export default function ConnectionStatsSidebar() {
+  const { t } = useI18n();
   const { sidebarView, setSidebarView } = useUiStore();
   const {
     mediaStream,
@@ -95,7 +97,7 @@ export default function ConnectionStatsSidebar() {
 
   return (
     <div className="grid h-full grid-rows-(--grid-headerBody) shadow-xs">
-      <SidebarHeader title="Connection Stats" setSidebarView={setSidebarView} />
+      <SidebarHeader title={t("stats.sidebarTitle")} setSidebarView={setSidebarView} />
       <div className="h-full space-y-4 overflow-y-scroll bg-white px-4 py-2 pb-8 dark:bg-slate-900">
         <div className="space-y-4">
           {sidebarView === "connection-stats" && (
@@ -103,12 +105,12 @@ export default function ConnectionStatsSidebar() {
               {/* Connection Group */}
               <div className="space-y-3">
                 <SettingsSectionHeader
-                  title="Connection"
-                  description="The connection between the client and the JetKVM."
+                  title={t("stats.connection.title")}
+                  description={t("stats.connection.desc")}
                 />
                 <Metric
-                  title="Round-Trip Time"
-                  description="Round-trip time for the active ICE candidate pair between peers."
+                  title={t("stats.connection.rtt")}
+                  description={t("stats.connection.rttDesc")}
                   stream={iceCandidatePairStats}
                   metric="currentRoundTripTime"
                   map={x => ({
@@ -116,23 +118,23 @@ export default function ConnectionStatsSidebar() {
                     metric: x.metric != null ? Math.round(x.metric * 1000) : null,
                   })}
                   domain={[0, 600]}
-                  unit=" ms"
+                  unit={t("stats.units.ms")}
                 />
               </div>
 
               {/* Video Group */}
               <div className="space-y-3">
                 <SettingsSectionHeader
-                  title="Video"
-                  description="The video stream from the JetKVM to the client."
+                  title={t("stats.video.title")}
+                  description={t("stats.video.desc")}
                 />
 
                 {/* RTP Jitter */}
                 <Metric
-                  title="Network Stability"
-                  badge="Jitter"
+                  title={t("stats.video.jitterTitle")}
+                  badge={t("stats.video.jitterBadge")}
                   badgeTheme="light"
-                  description="How steady the flow of inbound video packets is across the network."
+                  description={t("stats.video.jitterDesc")}
                   stream={inboundVideoRtpStats}
                   metric="jitter"
                   map={x => ({
@@ -140,14 +142,14 @@ export default function ConnectionStatsSidebar() {
                     metric: x.metric != null ? Math.round(x.metric * 1000) : null,
                   })}
                   domain={[0, 10]}
-                  unit=" ms"
+                  unit={t("stats.units.ms")}
                 />
 
                 {/* Playback Delay */}
                 <Metric
-                  title="Playback Delay"
-                  description="Delay added by the jitter buffer to smooth playback when frames arrive unevenly."
-                  badge="Jitter Buffer Avg. Delay"
+                  title={t("stats.video.playbackDelayTitle")}
+                  description={t("stats.video.playbackDelayDesc")}
+                  badge={t("stats.video.playbackDelayBadge")}
                   badgeTheme="light"
                   data={jitterBufferAvgDelayData}
                   gate={inboundVideoRtpStats}
@@ -162,27 +164,27 @@ export default function ConnectionStatsSidebar() {
                     )
                   }
                   domain={[0, 30]}
-                  unit=" ms"
+                  unit={t("stats.units.ms")}
                 />
 
                 {/* Packets Lost */}
                 <Metric
-                  title="Packets Lost"
-                  description="Count of lost inbound video RTP packets."
+                  title={t("stats.video.packetsLost")}
+                  description={t("stats.video.packetsLostDesc")}
                   stream={inboundVideoRtpStats}
                   metric="packetsLost"
                   domain={[0, 100]}
-                  unit=" packets"
+                  unit={t("stats.units.packets")}
                 />
 
                 {/* Frames Per Second */}
                 <Metric
-                  title="Frames per second"
-                  description="Number of inbound video frames displayed per second."
+                  title={t("stats.video.fps")}
+                  description={t("stats.video.fpsDesc")}
                   stream={inboundVideoRtpStats}
                   metric="framesPerSecond"
                   domain={[0, 80]}
-                  unit=" fps"
+                  unit={t("stats.units.fps")}
                 />
               </div>
             </div>

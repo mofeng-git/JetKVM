@@ -5,6 +5,7 @@ import KeyboardAndMouseConnectedIcon from "@/assets/keyboard-and-mouse-connected
 import LoadingSpinner from "@components/LoadingSpinner";
 import StatusCard from "@components/StatusCards";
 import { USBStates } from "@/hooks/stores";
+import { useI18n } from "@/i18n";
 
 type StatusProps = Record<
   USBStates,
@@ -15,12 +16,12 @@ type StatusProps = Record<
   }
 >;
 
-const USBStateMap: Record<USBStates, string> = {
-  configured: "Connected",
-  attached: "Connecting",
-  addressed: "Connecting",
-  "not attached": "Disconnected",
-  suspended: "Low power mode",
+const usbStateKeyMap: Record<USBStates, string> = {
+  configured: "status.usb.configured",
+  attached: "status.usb.attached",
+  addressed: "status.usb.addressed",
+  "not attached": "status.usb.notAttached",
+  suspended: "status.usb.suspended",
 };
 const StatusCardProps: StatusProps = {
   configured: {
@@ -63,7 +64,7 @@ export default function USBStateStatus({
   state: USBStates;
   peerConnectionState?: RTCPeerConnectionState | null;
 }) {
-
+  const { t } = useI18n();
   const props = StatusCardProps[state];
   if (!props) {
     console.warn("Unsupported USB state: ", state);
@@ -80,8 +81,8 @@ export default function USBStateStatus({
 
     return (
       <StatusCard
-        title="USB"
-        status="Disconnected"
+        title={t("status.usbTitle")}
+        status={t("status.usb.notAttached")}
         icon={Icon}
         iconClassName={iconClassName}
         statusIndicatorClassName={statusIndicatorClassName}
@@ -90,6 +91,10 @@ export default function USBStateStatus({
   }
 
   return (
-    <StatusCard title="USB" status={USBStateMap[state]} {...StatusCardProps[state]} />
+    <StatusCard
+      title={t("status.usbTitle")}
+      status={t(usbStateKeyMap[state])}
+      {...StatusCardProps[state]}
+    />
   );
 }

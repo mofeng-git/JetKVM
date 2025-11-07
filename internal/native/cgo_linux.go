@@ -1,4 +1,4 @@
-//go:build linux
+//go:build linux && cgo && !uvconly
 
 package native
 
@@ -11,7 +11,7 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -Lcgo/lib -ljknative -llvgl
+#cgo LDFLAGS: -Lcgo/lib -ljknative -llvgl 
 #cgo CFLAGS: -Icgo/include
 #include "ctrl.h"
 #include <stdlib.h>

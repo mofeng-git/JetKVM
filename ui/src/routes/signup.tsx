@@ -1,8 +1,10 @@
 import { useLocation, useSearchParams } from "react-router";
 
 import AuthLayout from "@components/AuthLayout";
+import { useI18n } from "@/i18n";
 
 export default function SignupRoute() {
+  const { t } = useI18n();
   const [sq] = useSearchParams();
   const location = useLocation();
   const deviceId = sq.get("deviceId") || location.state?.deviceId;
@@ -11,10 +13,10 @@ export default function SignupRoute() {
     return (
       <AuthLayout
         showCounter={true}
-        title="Connect your JetKVM to the cloud"
-        description="Unlock remote access and advanced features for your device."
-        action="Signup & Connect device"
-        cta="Already have an account?"
+        title={t("signup.titleDevice")}
+        description={t("signup.descDevice")}
+        action={t("signup.actionConnect")}
+        cta={t("signup.ctaHave")}
         ctaHref={`/login?${sq.toString()}`}
       />
     );
@@ -22,11 +24,11 @@ export default function SignupRoute() {
 
   return (
     <AuthLayout
-      title="Create your JetKVM account"
-      description="Create your account and start managing your devices with ease."
-      action="Create Account"
+      title={t("signup.title")}
+      description={t("signup.desc")}
+      action={t("signup.actionCreate")}
       // Header CTA
-      cta="Already have an account?"
+      cta={t("signup.ctaHave")}
       ctaHref={`/login?${sq.toString()}`}
     />
   );

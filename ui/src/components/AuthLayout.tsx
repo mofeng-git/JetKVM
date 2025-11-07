@@ -8,6 +8,7 @@ import Fieldset from "@components/Fieldset";
 import GridBackground from "@components/GridBackground";
 import StepCounter from "@components/StepCounter";
 import { CLOUD_API } from "@/ui.config";
+import { LanguageSwitcher } from "@/i18n";
 
 interface AuthLayoutProps {
   title: string;
@@ -41,8 +42,9 @@ export default function AuthLayout({
         <SimpleNavbar
           logoHref="/"
           actionElement={
-            <div>
+            <div className="flex items-center gap-3">
               <LinkButton to={ctaHref} text={cta} theme="light" size="MD" />
+              <LanguageSwitcher />
             </div>
           }
         />

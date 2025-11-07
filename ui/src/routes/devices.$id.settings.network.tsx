@@ -23,6 +23,7 @@ import Fieldset from "@/components/Fieldset";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SettingsItem } from "@components/SettingsItem";
 import notifications from "@/notifications";
+import { useI18n } from "@/i18n";
 
 import Ipv6NetworkCard from "../components/Ipv6NetworkCard";
 import EmptyCard from "../components/EmptyCard";
@@ -45,6 +46,7 @@ const defaultNetworkSettings: NetworkSettings = {
 
 export function LifeTimeLabel({ lifetime }: { lifetime: string }) {
   const [remaining, setRemaining] = useState<string | null>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     setRemaining(dayjs(lifetime).fromNow());
@@ -56,7 +58,7 @@ export function LifeTimeLabel({ lifetime }: { lifetime: string }) {
   }, [lifetime]);
 
   if (lifetime == "") {
-    return <strong>N/A</strong>;
+    return <strong>{t("settings.network.lifeTimeNA")}</strong>;
   }
 
   return (
@@ -71,6 +73,7 @@ export function LifeTimeLabel({ lifetime }: { lifetime: string }) {
 }
 
 export default function SettingsNetworkRoute() {
+  const { t } = useI18n();
   const { send } = useJsonRpc();
   const [networkState, setNetworkState] = useNetworkStateStore(state => [
     state,
@@ -222,13 +225,13 @@ export default function SettingsNetworkRoute() {
     <>
       <Fieldset disabled={!networkSettingsLoaded} className="space-y-4">
         <SettingsPageHeader
-          title="Network"
-          description="Configure your network settings"
+          title={t("settings.network.title")}
+          description={t("settings.network.desc")}
         />
         <div className="space-y-4">
           <SettingsItem
-            title="MAC Address"
-            description="Hardware identifier for the network interface"
+            title={t("settings.network.macTitle")}
+            description={t("settings.network.macDesc")}
           >
             <InputField
               type="text"
@@ -242,15 +245,15 @@ export default function SettingsNetworkRoute() {
         </div>
         <div className="space-y-4">
           <SettingsItem
-            title="Hostname"
-            description="Device identifier on the network. Blank for system default"
+            title={t("settings.network.hostnameTitle")}
+            description={t("settings.network.hostnameDesc")}
           >
             <div className="relative">
               <div>
                 <InputField
                   size="SM"
                   type="text"
-                  placeholder="jetkvm"
+                  placeholder={t("settings.network.hostnamePlaceholder")}
                   defaultValue={networkSettings.hostname}
                   onChange={e => {
                     handleHostnameChange(e.target.value);
@@ -262,15 +265,15 @@ export default function SettingsNetworkRoute() {
         </div>
         <div className="space-y-4">
           <SettingsItem
-            title="HTTP Proxy"
-            description="Proxy server for outgoing HTTP(S) requests from the device. Blank for none."
+            title={t("settings.network.proxyTitle")}
+            description={t("settings.network.proxyDesc")}
           >
             <div className="relative">
               <div>
                 <InputField
                   size="SM"
                   type="text"
-                  placeholder="http://proxy.example.com:8080/"
+                  placeholder={t("settings.network.proxyPlaceholder")}
                   defaultValue={networkSettings.http_proxy}
                   onChange={e => {
                     handleProxyChange(e.target.value);
@@ -284,8 +287,8 @@ export default function SettingsNetworkRoute() {
         <div className="space-y-4">
           <div className="space-y-1">
             <SettingsItem
-              title="Domain"
-              description="Network domain suffix for the device"
+              title={t("settings.network.domainTitle")}
+              description={t("settings.network.domainDesc")}
             >
               <div className="space-y-2">
                 <SelectMenuBasic
@@ -293,9 +296,9 @@ export default function SettingsNetworkRoute() {
                   value={selectedDomainOption}
                   onChange={e => handleDomainOptionChange(e.target.value)}
                   options={[
-                    { value: "dhcp", label: "DHCP provided" },
-                    { value: "local", label: ".local" },
-                    { value: "custom", label: "Custom" },
+                    { value: "dhcp", label: t("settings.network.domain.dhcp") },
+                    { value: "local", label: t("settings.network.domain.local") },
+                    { value: "custom", label: t("settings.network.domain.custom") },
                   ]}
                 />
               </div>
@@ -305,8 +308,8 @@ export default function SettingsNetworkRoute() {
                 <InputFieldWithLabel
                   size="SM"
                   type="text"
-                  label="Custom Domain"
-                  placeholder="home"
+                  label={t("settings.network.domain.customLabel")}
+                  placeholder={t("settings.network.domain.customPlaceholder")}
                   value={customDomain}
                   onChange={e => {
                     setCustomDomain(e.target.value);
@@ -318,18 +321,18 @@ export default function SettingsNetworkRoute() {
           </div>
           <div className="space-y-4">
             <SettingsItem
-              title="mDNS"
-              description="Control mDNS (multicast DNS) operational mode"
+              title={t("settings.network.mdnsTitle")}
+              description={t("settings.network.mdnsDesc")}
             >
               <SelectMenuBasic
                 size="SM"
                 value={networkSettings.mdns_mode}
                 onChange={e => handleMdnsModeChange(e.target.value)}
                 options={filterUnknown([
-                  { value: "disabled", label: "Disabled" },
-                  { value: "auto", label: "Auto" },
-                  { value: "ipv4_only", label: "IPv4 only" },
-                  { value: "ipv6_only", label: "IPv6 only" },
+                  { value: "disabled", label: t("settings.network.mdnsOptions.disabled") },
+                  { value: "auto", label: t("settings.network.mdnsOptions.auto") },
+                  { value: "ipv4_only", label: t("settings.network.mdnsOptions.ipv4") },
+                  { value: "ipv6_only", label: t("settings.network.mdnsOptions.ipv6") },
                 ])}
               />
             </SettingsItem>
@@ -337,8 +340,8 @@ export default function SettingsNetworkRoute() {
 
           <div className="space-y-4">
             <SettingsItem
-              title="Time synchronization"
-              description="Configure time synchronization settings"
+              title={t("settings.network.timeTitle")}
+              description={t("settings.network.timeDesc")}
             >
               <SelectMenuBasic
                 size="SM"
@@ -349,9 +352,9 @@ export default function SettingsNetworkRoute() {
                 options={filterUnknown([
                   { value: "unknown", label: "..." },
                   // { value: "auto", label: "Auto" },
-                  { value: "ntp_only", label: "NTP only" },
-                  { value: "ntp_and_http", label: "NTP and HTTP" },
-                  { value: "http_only", label: "HTTP only" },
+                  { value: "ntp_only", label: t("settings.network.timeOptions.ntp_only") },
+                  { value: "ntp_and_http", label: t("settings.network.timeOptions.ntp_and_http") },
+                  { value: "http_only", label: t("settings.network.timeOptions.http_only") },
                   // { value: "custom", label: "Custom" },
                 ])}
               />
@@ -362,7 +365,7 @@ export default function SettingsNetworkRoute() {
             size="SM"
             theme="primary"
             disabled={firstNetworkSettings.current === networkSettings}
-            text="Save Settings"
+            text={t("settings.network.save")}
             onClick={() => setNetworkSettingsRemote(networkSettings)}
           />
         </div>
@@ -370,7 +373,7 @@ export default function SettingsNetworkRoute() {
         <div className="h-px w-full bg-slate-800/10 dark:bg-slate-300/20" />
 
         <div className="space-y-4">
-          <SettingsItem title="IPv4 Mode" description="Configure the IPv4 mode">
+          <SettingsItem title={t("settings.network.ipv4Title")} description={t("settings.network.ipv4Desc")}>
             <SelectMenuBasic
               size="SM"
               value={networkSettings.ipv4_mode}
@@ -387,7 +390,7 @@ export default function SettingsNetworkRoute() {
                 <div className="p-4">
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      DHCP Lease Information
+                      {t("settings.network.leaseTitle")}
                     </h3>
                     <div className="animate-pulse space-y-3">
                       <div className="h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
@@ -405,14 +408,14 @@ export default function SettingsNetworkRoute() {
             ) : (
               <EmptyCard
                 IconElm={LuEthernetPort}
-                headline="DHCP Information"
-                description="No DHCP lease information available"
+                headline={t("settings.network.leaseEmptyTitle")}
+                description={t("settings.network.leaseEmptyDesc")}
               />
             )}
           </AutoHeight>
         </div>
         <div className="space-y-4">
-          <SettingsItem title="IPv6 Mode" description="Configure the IPv6 mode">
+          <SettingsItem title={t("settings.network.ipv6Title")} description={t("settings.network.ipv6Desc")}>
             <SelectMenuBasic
               size="SM"
               value={networkSettings.ipv6_mode}
@@ -434,7 +437,7 @@ export default function SettingsNetworkRoute() {
                 <div className="p-4">
                   <div className="space-y-4">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      IPv6 Information
+                      {t("settings.network.ipv6InfoTitle")}
                     </h3>
                     <div className="animate-pulse space-y-3">
                       <div className="h-4 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
@@ -449,8 +452,8 @@ export default function SettingsNetworkRoute() {
             ) : (
               <EmptyCard
                 IconElm={LuEthernetPort}
-                headline="IPv6 Information"
-                description="No IPv6 addresses configured"
+                headline={t("settings.network.ipv6InfoTitle")}
+                description={t("settings.network.ipv6InfoDesc")}
               />
             )}
           </AutoHeight>
@@ -476,10 +479,10 @@ export default function SettingsNetworkRoute() {
       <ConfirmDialog
         open={showRenewLeaseConfirm}
         onClose={() => setShowRenewLeaseConfirm(false)}
-        title="Renew DHCP Lease"
-        description="This will request a new IP address from your DHCP server. Your device may temporarily lose network connectivity during this process."
+        title={t("settings.network.confirmRenewTitle")}
+        description={t("settings.network.confirmRenewDesc")}
         variant="danger"
-        confirmText="Renew Lease"
+        confirmText={t("settings.network.confirmRenew")}
         onConfirm={() => {
           handleRenewLease();
           setShowRenewLeaseConfirm(false);

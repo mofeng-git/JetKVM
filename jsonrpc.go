@@ -199,21 +199,15 @@ func rpcReboot(force bool) error {
 	return nil
 }
 
-var streamFactor = 1.0
-
 func rpcGetStreamQualityFactor() (float64, error) {
-	return streamFactor, nil
+    // 网页端请求当前“质量因子”，功能已停用，固定返回 1.0
+    return 1.0, nil
 }
 
 func rpcSetStreamQualityFactor(factor float64) error {
-	logger.Info().Float64("factor", factor).Msg("Setting stream quality factor")
-	err := nativeInstance.VideoSetQualityFactor(factor)
-	if err != nil {
-		return err
-	}
-
-	streamFactor = factor
-	return nil
+    // 忽略网页端质量调整请求，不做任何运行时变更
+    logger.Info().Float64("factor", factor).Msg("Ignoring stream quality factor change (disabled)")
+    return nil
 }
 
 func rpcGetAutoUpdateState() (bool, error) {

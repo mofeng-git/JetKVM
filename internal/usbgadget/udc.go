@@ -4,42 +4,72 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
+// getUdcs returns a sorted list of UDC names discovered from sysfs.
 func getUdcs() []string {
 	var udcs []string
 
-	files, err := os.ReadDir("/sys/devices/platform/usbdrd")
-	if err != nil {
-		return nil
-	}
-
-	for _, file := range files {
-		if !file.IsDir() || !strings.HasSuffix(file.Name(), ".usb") {
-			continue
+	// Prefer the canonical sysfs class for UDCs, which is widely available.
+	if entries, err := os.ReadDir("/sys/class/udc"); err == nil {
+		for _, e := range entries {
+			name := strings.TrimSpace(e.Name())
+			if name == "" || name == "." || name == ".." {
+				continue
+			}
+			udcs = append(udcs, name)
 		}
-		udcs = append(udcs, file.Name())
 	}
 
+	// Fallback for some platforms exposing UDCs under usbdrd path.
+	if len(udcs) == 0 {
+		if entries, err := os.ReadDir("/sys/devices/platform/usbdrd"); err == nil {
+			for _, e := range entries {
+				if !e.IsDir() || !strings.HasSuffix(e.Name(), ".usb") {
+					continue
+				}
+				udcs = append(udcs, e.Name())
+			}
+		}
+	}
+
+	if len(udcs) > 1 {
+		sort.Strings(udcs)
+	}
 	return udcs
 }
 
-func rebindUsb(udc string, ignoreUnbindError bool) error {
-	err := os.WriteFile(path.Join(dwc3Path, "unbind"), []byte(udc), 0644)
-	if err != nil && !ignoreUnbindError {
+// resolveUDCDriverPath resolves the driver directory for a given UDC name.
+// It follows the symlink at /sys/class/udc/<udc>/device/driver and returns
+// an absolute path to the driver directory where bind/unbind exist.
+func resolveUDCDriverPath(udc string) (string, error) {
+	link := filepath.Join("/sys/class/udc", udc, "device", "driver")
+	resolved, err := filepath.EvalSymlinks(link)
+	if err != nil || resolved == "" {
+		return "", fmt.Errorf("unable to resolve driver path for UDC %s: %w", udc, err)
+	}
+	return resolved, nil
+}
+
+func rebindUsb(driverPath, udc string, ignoreUnbindError bool) error {
+	if driverPath == "" {
+		return fmt.Errorf("driverPath is empty")
+	}
+	if err := os.WriteFile(path.Join(driverPath, "unbind"), []byte(udc), 0644); err != nil && !ignoreUnbindError {
 		return err
 	}
-	err = os.WriteFile(path.Join(dwc3Path, "bind"), []byte(udc), 0644)
-	if err != nil {
+	if err := os.WriteFile(path.Join(driverPath, "bind"), []byte(udc), 0644); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (u *UsbGadget) rebindUsb(ignoreUnbindError bool) error {
-	u.log.Info().Str("udc", u.udc).Msg("rebinding USB gadget to UDC")
-	return rebindUsb(u.udc, ignoreUnbindError)
+	u.log.Info().Str("udc", u.udc).Str("driver_path", u.udcDriverPath).Msg("rebinding USB gadget to UDC")
+	return rebindUsb(u.udcDriverPath, u.udc, ignoreUnbindError)
 }
 
 // RebindUsb rebinds the USB gadget to the UDC.
@@ -50,24 +80,26 @@ func (u *UsbGadget) RebindUsb(ignoreUnbindError bool) error {
 	return u.rebindUsb(ignoreUnbindError)
 }
 
-// GetUsbState returns the current state of the USB gadget
+// GetUsbState returns the current state of the USB gadget.
 func (u *UsbGadget) GetUsbState() (state string) {
 	stateFile := path.Join("/sys/class/udc", u.udc, "state")
 	stateBytes, err := os.ReadFile(stateFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "not attached"
-		} else {
-			u.log.Trace().Err(err).Msg("failed to read usb state")
 		}
+		u.log.Trace().Err(err).Msg("failed to read usb state")
 		return "unknown"
 	}
 	return strings.TrimSpace(string(stateBytes))
 }
 
-// IsUDCBound checks if the UDC state is bound.
+// IsUDCBound checks if the UDC is currently bound (driver sees the UDC name).
 func (u *UsbGadget) IsUDCBound() (bool, error) {
-	udcFilePath := path.Join(dwc3Path, u.udc)
+	if u.udcDriverPath == "" || u.udc == "" {
+		return false, nil
+	}
+	udcFilePath := path.Join(u.udcDriverPath, u.udc)
 	_, err := os.Stat(udcFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -78,10 +110,12 @@ func (u *UsbGadget) IsUDCBound() (bool, error) {
 	return true, nil
 }
 
-// BindUDC binds the gadget to the UDC.
+// BindUDC binds the gadget to the selected UDC.
 func (u *UsbGadget) BindUDC() error {
-	err := os.WriteFile(path.Join(dwc3Path, "bind"), []byte(u.udc), 0644)
-	if err != nil {
+	if u.udcDriverPath == "" {
+		return fmt.Errorf("UDC driver path not set")
+	}
+	if err := os.WriteFile(path.Join(u.udcDriverPath, "bind"), []byte(u.udc), 0644); err != nil {
 		return fmt.Errorf("error binding UDC: %w", err)
 	}
 	return nil
@@ -89,8 +123,10 @@ func (u *UsbGadget) BindUDC() error {
 
 // UnbindUDC unbinds the gadget from the UDC.
 func (u *UsbGadget) UnbindUDC() error {
-	err := os.WriteFile(path.Join(dwc3Path, "unbind"), []byte(u.udc), 0644)
-	if err != nil {
+	if u.udcDriverPath == "" {
+		return fmt.Errorf("UDC driver path not set")
+	}
+	if err := os.WriteFile(path.Join(u.udcDriverPath, "unbind"), []byte(u.udc), 0644); err != nil {
 		return fmt.Errorf("error unbinding UDC: %w", err)
 	}
 	return nil

@@ -5,6 +5,7 @@ import { Button } from "@components/Button";
 import Card from "@components/Card";
 import { SettingsPageHeader } from "@components/SettingsPageheader";
 import notifications from "@/notifications";
+import { useI18n } from "@/i18n";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 import { JsonRpcResponse, useJsonRpc } from "../../hooks/useJsonRpc";
@@ -17,6 +18,7 @@ interface ATXState {
 }
 
 export function ATXPowerControl() {
+  const { t } = useI18n();
   const [isPowerPressed, setIsPowerPressed] = useState(false);
   const [powerPressTimer, setPowerPressTimer] = useState<ReturnType<
     typeof setTimeout
@@ -34,7 +36,7 @@ export function ATXPowerControl() {
     send("getATXState", {}, (resp: JsonRpcResponse) => {
       if ("error" in resp) {
         notifications.error(
-          `Failed to get ATX state: ${resp.error.data || "Unknown error"}`,
+          t("extensions.atx.notify.getStateFail", { reason: resp.error.data || t("extensions.common.unknown") }),
         );
         return;
       }
@@ -57,7 +59,7 @@ export function ATXPowerControl() {
         send("setATXPowerAction", { action: "power-long" }, (resp: JsonRpcResponse) => {
           if ("error" in resp) {
             notifications.error(
-              `Failed to send ATX power action: ${resp.error.data || "Unknown error"}`,
+              t("extensions.atx.notify.actionFail", { reason: resp.error.data || t("extensions.common.unknown") }),
             );
           }
           setIsPowerPressed(false);
@@ -78,7 +80,7 @@ export function ATXPowerControl() {
         send("setATXPowerAction", { action: "power-short" }, (resp: JsonRpcResponse) => {
           if ("error" in resp) {
             notifications.error(
-              `Failed to send ATX power action: ${resp.error.data || "Unknown error"}`,
+              t("extensions.atx.notify.actionFail", { reason: resp.error.data || t("extensions.common.unknown") }),
             );
           }
         });
@@ -98,8 +100,8 @@ export function ATXPowerControl() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="ATX Power Control"
-        description="Control your ATX power settings"
+        title={t("extensions.atx.title")}
+        description={t("extensions.atx.desc")}
       />
 
       {atxState === null ? (
@@ -115,7 +117,7 @@ export function ATXPowerControl() {
                 size="SM"
                 theme="light"
                 LeadingIcon={LuPower}
-                text="Power"
+                text={t("extensions.atx.power")}
                 onMouseDown={() => handlePowerPress(true)}
                 onMouseUp={() => handlePowerPress(false)}
                 onMouseLeave={() => handlePowerPress(false)}
@@ -125,12 +127,12 @@ export function ATXPowerControl() {
                 size="SM"
                 theme="light"
                 LeadingIcon={LuRotateCcw}
-                text="Reset"
+                text={t("extensions.atx.reset")}
                 onClick={() => {
                   send("setATXPowerAction", { action: "reset" }, (resp: JsonRpcResponse) => {
                     if ("error" in resp) {
                       notifications.error(
-                        `Failed to send ATX power action: ${resp.error.data || "Unknown error"}`,
+                        t("extensions.atx.notify.actionFail", { reason: resp.error.data || t("extensions.common.unknown") }),
                       );
                       return;
                     }
@@ -150,7 +152,7 @@ export function ATXPowerControl() {
                       atxState?.power ? "text-green-600" : "text-slate-300"
                     }`}
                   />
-                  Power LED
+                  {t("extensions.atx.powerLed")}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
@@ -161,7 +163,7 @@ export function ATXPowerControl() {
                       atxState?.hdd ? "text-blue-400" : "text-slate-300"
                     }`}
                   />
-                  HDD LED
+                  {t("extensions.atx.hddLed")}
                 </span>
               </div>
             </div>

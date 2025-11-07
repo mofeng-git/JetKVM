@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useI18n } from "@/i18n";
 
 import { cx } from "@/cva.config";
 import {
@@ -13,6 +14,7 @@ import { keys, modifiers } from "@/keyboardMappings";
 import { useHidRpc } from "@/hooks/useHidRpc";
 
 export default function InfoBar() {
+  const { t } = useI18n();
   const { keysDownState } = useHidStore();
   const { mouseX, mouseY, mouseMove } = useMouseStore();
   const { rpcHidStatus } = useHidRpc();
@@ -59,21 +61,21 @@ export default function InfoBar() {
           <div className="flex flex-wrap items-center pl-2 gap-x-4">
             {debugMode ? (
               <div className="flex">
-                <span className="text-xs font-semibold">Resolution:</span>{" "}
+                <span className="text-xs font-semibold">{t("infobar.resolution")}</span>{" "}
                 <span className="text-xs">{videoSize}</span>
               </div>
             ) : null}
 
             {debugMode ? (
               <div className="flex">
-                <span className="text-xs font-semibold">Video Size: </span>
+                <span className="text-xs font-semibold">{t("infobar.videoSize")} </span>
                 <span className="text-xs">{videoClientSize}</span>
               </div>
             ) : null}
 
             {(debugMode && mouseMode == "absolute") ? (
               <div className="flex w-[118px] items-center gap-x-1">
-                <span className="text-xs font-semibold">Pointer:</span>
+                <span className="text-xs font-semibold">{t("infobar.pointer")}</span>
                 <span className="text-xs">
                   {mouseX},{mouseY}
                 </span>
@@ -82,42 +84,42 @@ export default function InfoBar() {
 
             {(debugMode && mouseMode == "relative") ? (
               <div className="flex w-[118px] items-center gap-x-1">
-                <span className="text-xs font-semibold">Last Move:</span>
+                <span className="text-xs font-semibold">{t("infobar.lastMove")}</span>
                 <span className="text-xs">
                   {mouseMove ?
                     `${mouseMove.x},${mouseMove.y} ${mouseMove.buttons ? `(${mouseMove.buttons})` : ""}` :
-                    "N/A"}
+                    t("infobar.na")}
                 </span>
               </div>
             ) : null}
 
             {debugMode && (
               <div className="flex w-[156px] items-center gap-x-1">
-                <span className="text-xs font-semibold">USB State:</span>
+                <span className="text-xs font-semibold">{t("infobar.usbState")}</span>
                 <span className="text-xs">{usbState}</span>
               </div>
             )}
             {debugMode && (
               <div className="flex w-[156px] items-center gap-x-1">
-                <span className="text-xs font-semibold">HDMI State:</span>
+                <span className="text-xs font-semibold">{t("infobar.hdmiState")}</span>
                 <span className="text-xs">{hdmiState}</span>
               </div>
             )}
             {debugMode && (
               <div className="flex w-[156px] items-center gap-x-1">
-                <span className="text-xs font-semibold">HidRPC State:</span>
+                <span className="text-xs font-semibold">{t("infobar.hidrpcState")}</span>
                 <span className="text-xs">{rpcHidStatus}</span>
               </div>
             )}
             {isPasteInProgress && (
               <div className="flex w-[156px] items-center gap-x-1">
-                <span className="text-xs font-semibold">Paste Mode:</span>
-                <span className="text-xs">Enabled</span>
+                <span className="text-xs font-semibold">{t("infobar.pasteMode")}</span>
+                <span className="text-xs">{t("infobar.enabled")}</span>
               </div>
             )}
             {showPressedKeys && (
               <div className="flex items-center gap-x-1">
-                <span className="text-xs font-semibold">Keys:</span>
+                <span className="text-xs font-semibold">{t("infobar.keys")}</span>
                 <h2 className="text-xs">
                   {displayKeys}
                 </h2>
@@ -128,7 +130,7 @@ export default function InfoBar() {
         <div className="flex items-center divide-x first:divide-l divide-slate-800/20 dark:divide-slate-300/20">
           {isTurnServerInUse && (
             <div className="shrink-0 p-1 px-1.5 text-xs text-black dark:text-white">
-              Relayed by Cloudflare
+              {t("infobar.relayed")}
             </div>
           )}
 
@@ -140,7 +142,7 @@ export default function InfoBar() {
                 : "text-slate-800/20 dark:text-slate-300/20",
             )}
           >
-            Caps Lock
+            {t("infobar.caps")}
           </div>
           <div
             className={cx(
@@ -150,7 +152,7 @@ export default function InfoBar() {
                 : "text-slate-800/20 dark:text-slate-300/20",
             )}
           >
-            Num Lock
+            {t("infobar.num")}
           </div>
           <div
             className={cx(
@@ -160,21 +162,21 @@ export default function InfoBar() {
                 : "text-slate-800/20 dark:text-slate-300/20",
             )}
           >
-            Scroll Lock
+            {t("infobar.scroll")}
           </div>
           {keyboardLedState.compose ? (
             <div className="shrink-0 p-1 px-1.5 text-xs">
-              Compose
+              {t("infobar.compose")}
             </div>
           ) : null}
           {keyboardLedState.kana ? (
             <div className="shrink-0 p-1 px-1.5 text-xs">
-              Kana
+              {t("infobar.kana")}
             </div>
           ) : null}
           {keyboardLedState.shift ? (
             <div className="shrink-0 p-1 px-1.5 text-xs">
-              Shift
+              {t("infobar.shift")}
             </div>
           ) : null}
         </div>

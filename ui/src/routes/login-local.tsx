@@ -17,6 +17,8 @@ import api from "../api";
 import ExtLink from "../components/ExtLink";
 
 import { DeviceStatus } from "./welcome-local";
+import { LanguageSwitcher } from "@/i18n";
+import { useI18n } from "@/i18n";
 
 const loader: LoaderFunction = async () => {
   const res = await api
@@ -53,6 +55,7 @@ const action: ActionFunction = async ({ request }: ActionFunctionArgs) => {
 export default function LoginLocalRoute() {
   const actionData = useActionData() as { error?: string; success?: boolean };
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useI18n();
 
   return (
     <>
@@ -73,10 +76,10 @@ export default function LoginLocalRoute() {
 
               <div className="space-y-2 text-center">
                 <h1 className="text-4xl font-semibold text-black dark:text-white">
-                  Welcome back to JetKVM
+                  {t("loginLocal.title")}
                 </h1>
                 <p className="font-medium text-slate-600 dark:text-slate-400">
-                  Enter your password to access your JetKVM.
+                  {t("loginLocal.desc")}
                 </p>
               </div>
 
@@ -84,11 +87,11 @@ export default function LoginLocalRoute() {
                 <Form method="POST" className="mx-auto max-w-sm space-y-4">
                   <div className="space-y-4">
                     <InputFieldWithLabel
-                      label="Password"
+                      label={t("loginLocal.password")}
                       type={showPassword ? "text" : "password"}
                       name="password"
                       autoComplete="current-password"
-                      placeholder="Enter your password"
+                      placeholder={t("loginLocal.placeholder")}
                       autoFocus
                       error={actionData?.error}
                       TrailingElm={
@@ -116,17 +119,20 @@ export default function LoginLocalRoute() {
                     theme="primary"
                     fullWidth
                     type="submit"
-                    text="Log In"
+                    text={t("loginLocal.signIn")}
                     textAlign="center"
                   />
 
-                  <div className="mt-4 flex justify-start text-xs text-slate-500 dark:text-slate-400">
+                  <div className="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                     <ExtLink
                       href="https://jetkvm.com/docs/networking/local-access#reset-password"
                       className="hover:underline"
                     >
-                      Forgot password?
+                      {t("loginLocal.forgot")}
                     </ExtLink>
+                    <div className="shrink-0">
+                      <LanguageSwitcher />
+                    </div>
                   </div>
                 </Form>
               </Fieldset>

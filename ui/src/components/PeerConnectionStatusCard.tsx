@@ -1,17 +1,18 @@
 import StatusCard from "@components/StatusCards";
+import { useI18n } from "@/i18n";
 
-const PeerConnectionStatusMap = {
-  connected: "Connected",
-  connecting: "Connecting",
-  disconnected: "Disconnected",
-  error: "Connection error",
-  closing: "Closing",
-  failed: "Connection failed",
-  closed: "Closed",
-  new: "Connecting",
+const peerStatusKeyMap = {
+  connected: "status.peer.connected",
+  connecting: "status.peer.connecting",
+  disconnected: "status.peer.disconnected",
+  error: "status.peer.error",
+  closing: "status.peer.closing",
+  failed: "status.peer.failed",
+  closed: "status.peer.closed",
+  new: "status.peer.new",
 } as Record<RTCPeerConnectionState | "error" | "closing", string>;
 
-export type PeerConnections = keyof typeof PeerConnectionStatusMap;
+export type PeerConnections = keyof typeof peerStatusKeyMap;
 
 type StatusProps = Record<
   PeerConnections,
@@ -28,6 +29,7 @@ export default function PeerConnectionStatusCard({
   title?: string;
 }) {
   if (!state) return null;
+  const { t } = useI18n();
   const StatusCardProps: StatusProps = {
     connected: {
       statusIndicatorClassName: "bg-green-500 border-green-600",
@@ -59,8 +61,8 @@ export default function PeerConnectionStatusCard({
 
   return (
     <StatusCard
-      title={title || "JetKVM Device"}
-      status={PeerConnectionStatusMap[state]}
+      title={title || t("status.peerTitle")}
+      status={t(peerStatusKeyMap[state])}
       {...StatusCardProps[state]}
     />
   );

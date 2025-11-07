@@ -8,6 +8,7 @@ import { JsonRpcResponse, useJsonRpc } from "@/hooks/useJsonRpc";
 import notifications from "@/notifications";
 import { useUiStore } from "@/hooks/stores";
 import { SelectMenuBasic } from "@components/SelectMenuBasic";
+import { useI18n } from "@/i18n";
 
 interface SerialSettings {
   baudRate: string;
@@ -17,6 +18,7 @@ interface SerialSettings {
 }
 
 export function SerialConsole() {
+  const { t } = useI18n();
   const { send } = useJsonRpc();
   const [settings, setSettings] = useState<SerialSettings>({
     baudRate: "9600",
@@ -29,7 +31,7 @@ export function SerialConsole() {
     send("getSerialSettings", {}, (resp: JsonRpcResponse) => {
       if ("error" in resp) {
         notifications.error(
-          `Failed to get serial settings: ${resp.error.data || "Unknown error"}`,
+          t("extensions.serial.notify.getSettingsFail", { reason: resp.error.data || t("extensions.common.unknown") }),
         );
         return;
       }
@@ -42,7 +44,7 @@ export function SerialConsole() {
     send("setSerialSettings", { settings: newSettings }, (resp: JsonRpcResponse) => {
       if ("error" in resp) {
         notifications.error(
-          `Failed to update serial settings: ${resp.error.data || "Unknown error"}`,
+          t("extensions.serial.notify.updateSettingsFail", { reason: resp.error.data || t("extensions.common.unknown") }),
         );
         return;
       }
@@ -54,8 +56,8 @@ export function SerialConsole() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="Serial Console"
-        description="Configure your serial console settings"
+        title={t("extensions.serial.title")}
+        description={t("extensions.serial.desc")}
       />
 
       <Card className="animate-fadeIn opacity-0">
@@ -66,7 +68,7 @@ export function SerialConsole() {
               size="SM"
               theme="primary"
               LeadingIcon={LuTerminal}
-              text="Open Console"
+              text={t("extensions.serial.open")}
               onClick={() => {
                 setTerminalType("serial");
                 console.log("Opening serial console with settings: ", settings);
@@ -77,7 +79,7 @@ export function SerialConsole() {
           {/* Settings */}
           <div className="grid grid-cols-2 gap-4">
             <SelectMenuBasic
-              label="Baud Rate"
+              label={t("extensions.serial.baudRate")}
               options={[
                 { label: "1200", value: "1200" },
                 { label: "2400", value: "2400" },
@@ -93,7 +95,7 @@ export function SerialConsole() {
             />
 
             <SelectMenuBasic
-              label="Data Bits"
+              label={t("extensions.serial.dataBits")}
               options={[
                 { label: "8", value: "8" },
                 { label: "7", value: "7" },
@@ -103,7 +105,7 @@ export function SerialConsole() {
             />
 
             <SelectMenuBasic
-              label="Stop Bits"
+              label={t("extensions.serial.stopBits")}
               options={[
                 { label: "1", value: "1" },
                 { label: "1.5", value: "1.5" },
@@ -114,11 +116,11 @@ export function SerialConsole() {
             />
 
             <SelectMenuBasic
-              label="Parity"
+              label={t("extensions.serial.parity")}
               options={[
-                { label: "None", value: "none" },
-                { label: "Even", value: "even" },
-                { label: "Odd", value: "odd" },
+                { label: t("extensions.serial.parityNone"), value: "none" },
+                { label: t("extensions.serial.parityEven"), value: "even" },
+                { label: t("extensions.serial.parityOdd"), value: "odd" },
               ]}
               value={settings.parity}
               onChange={e => handleSettingChange("parity", e.target.value)}

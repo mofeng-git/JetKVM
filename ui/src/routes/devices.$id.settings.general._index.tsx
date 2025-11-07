@@ -10,12 +10,14 @@ import notifications from "../notifications";
 import Checkbox from "../components/Checkbox";
 import { useDeviceUiNavigation } from "../hooks/useAppNavigation";
 import { useDeviceStore } from "../hooks/stores";
+import { useI18n } from "@/i18n";
 
 
 export default function SettingsGeneralRoute() {
   const { send } = useJsonRpc();
   const { navigateTo } = useDeviceUiNavigation();
   const [autoUpdate, setAutoUpdate] = useState(true);
+  const { t } = useI18n();
 
   const currentVersions = useDeviceStore(state => {
     const { appVersion, systemVersion } = state;
@@ -34,7 +36,9 @@ export default function SettingsGeneralRoute() {
     send("setAutoUpdateState", { enabled }, (resp: JsonRpcResponse) => {
       if ("error" in resp) {
         notifications.error(
-          `Failed to set auto-update: ${resp.error.data || "Unknown error"}`,
+          t("settings.general.setAutoUpdateFailed", {
+            reason: resp.error.data || "Unknown error",
+          }),
         );
         return;
       }
@@ -45,27 +49,27 @@ export default function SettingsGeneralRoute() {
   return (
     <div className="space-y-4">
       <SettingsPageHeader
-        title="General"
-        description="Configure device settings and update preferences"
+        title={t("settings.general.title")}
+        description={t("settings.general.desc")}
       />
 
       <div className="space-y-4">
         <div className="space-y-4 pb-2">
           <div className="mt-2 flex items-center justify-between gap-x-2">
             <SettingsItem
-              title="Check for Updates"
+              title={t("settings.general.checkUpdates")}
               description={
                 currentVersions ? (
                   <>
-                    App: {currentVersions.appVersion}
+                    {t("settings.general.app")}: {currentVersions.appVersion}
                     <br />
-                    System: {currentVersions.systemVersion}
+                    {t("settings.general.system")}: {currentVersions.systemVersion}
                   </>
                 ) : (
                   <>
-                    App: Loading...
+                    {t("settings.general.app")}: {t("settings.general.loading")}
                     <br />
-                    System: Loading...
+                    {t("settings.general.system")}: {t("settings.general.loading")}
                   </>
                 )
               }
@@ -74,15 +78,15 @@ export default function SettingsGeneralRoute() {
               <Button
                 size="SM"
                 theme="light"
-                text="Check for Updates"
+                text={t("settings.general.checkUpdates")}
                 onClick={() => navigateTo("./update")}
               />
             </div>
           </div>
           <div className="space-y-4">
             <SettingsItem
-              title="Auto Update"
-              description="Automatically update the device to the latest version"
+              title={t("settings.general.autoUpdate")}
+              description={t("settings.general.autoUpdateDesc")}
             >
               <Checkbox
                 checked={autoUpdate}
@@ -95,14 +99,14 @@ export default function SettingsGeneralRoute() {
 
           <div className="mt-2 flex items-center justify-between gap-x-2">
             <SettingsItem
-              title="Reboot Device"
-              description="Power cycle the JetKVM"
+              title={t("settings.general.reboot")}
+              description={t("settings.general.rebootDesc")}
             />
             <div>
               <Button
                 size="SM"
                 theme="light"
-                text="Reboot Device"
+                text={t("settings.general.reboot")}
                 onClick={() => navigateTo("./reboot")}
               />
             </div>

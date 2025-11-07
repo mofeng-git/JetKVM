@@ -1,14 +1,14 @@
 package timesync
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
-	"sync"
-	"time"
+    "fmt"
+    "os"
+    "os/exec"
+    "sync"
+    "time"
 
-	"github.com/jetkvm/kvm/internal/network"
-	"github.com/rs/zerolog"
+    "github.com/jetkvm/kvm/internal/network"
+    "github.com/rs/zerolog"
 )
 
 const (
@@ -248,15 +248,22 @@ func (t *TimeSync) Start() {
 }
 
 func (t *TimeSync) setSystemTime(now time.Time) error {
-	nowStr := now.Format("2006-01-02 15:04:05")
-	output, err := exec.Command("date", "-s", nowStr).CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to run date -s: %w, %s", err, string(output))
-	}
+    // Use UTC epoch to avoid timezone interpretation issues
+    epochStr := fmt.Sprintf("@%d", now.Unix())
+    output, err := exec.Command("date", "-u", "-s", epochStr).CombinedOutput()
+    if err != nil {
+        return fmt.Errorf("failed to run date -s: %w, %s", err, string(output))
+    }
 
-	if t.rtcDevicePath != "" {
-		return t.setRtcTime(now)
-	}
+    // Optionally skip writing RTC if configured
+    if t.networkConfig != nil && t.networkConfig.TimeSyncSkipRTC.Bool {
+        return nil
+    }
 
-	return nil
+    if t.rtcDevicePath != "" {
+        // Always write UTC into RTC to keep a consistent convention
+        return t.setRtcTime(now.UTC())
+    }
+
+    return nil
 }

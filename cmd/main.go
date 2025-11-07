@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/erikdubbelboer/gspt"
 	"github.com/jetkvm/kvm"
 )
 
@@ -23,7 +22,7 @@ const (
 )
 
 func program() {
-	gspt.SetProcTitle(os.Args[0] + " [app]")
+	setProcTitle(os.Args[0] + " [app]")
 	kvm.Main()
 }
 
@@ -102,7 +101,7 @@ func supervise() error {
 		_ = cmd.Process.Signal(sig)
 	}()
 
-	gspt.SetProcTitle(os.Args[0] + " [sup]")
+		setProcTitle(os.Args[0] + " [sup]")
 
 	cmdErr := cmd.Wait()
 	if cmdErr == nil {

@@ -11,6 +11,7 @@ import { LinkButton } from "@components/Button";
 import { User } from "@/hooks/stores";
 import { checkAuth } from "@/main";
 import { CLOUD_API } from "@/ui.config";
+import { useI18n } from "@/i18n";
 
 interface LoaderData {
   devices: { id: string; name: string; online: boolean; lastSeen: string }[];
@@ -39,12 +40,13 @@ export default function DevicesRoute() {
   const { devices, user } = useLoaderData() as LoaderData;
   const revalidate = useRevalidator();
   useInterval(revalidate.revalidate, 4000);
+  const { t } = useI18n();
   return (
     <div className="relative h-full">
       <div className="grid h-full select-none grid-rows-(--grid-headerBody)">
         <DashboardNavbar
           isLoggedIn={!!user}
-          primaryLinks={[{ title: "Cloud Devices", to: "/devices" }]}
+          primaryLinks={[{ title: t("devices.navCloud"), to: "/devices" }]}
           userEmail={user?.email}
           picture={user?.picture}
         />
@@ -54,10 +56,10 @@ export default function DevicesRoute() {
             <div className="mt-8 flex items-center justify-between border-b border-b-slate-800/20 pb-4 dark:border-b-slate-300/20">
               <div>
                 <h1 className="text-xl font-bold text-black dark:text-white">
-                  Cloud KVMs
+                  {t("devices.title")}
                 </h1>
                 <p className="text-base text-slate-700 dark:text-slate-400">
-                  Manage your cloud KVMs and connect to them securely.
+                  {t("devices.desc")}
                 </p>
               </div>
             </div>
@@ -66,15 +68,15 @@ export default function DevicesRoute() {
               <div className="max-w-3xl">
                 <EmptyCard
                   IconElm={LuMonitorSmartphone}
-                  headline="No devices found"
-                  description="You don't have any devices with enabled JetKVM Cloud yet."
+                  headline={t("devices.empty.headline")}
+                  description={t("devices.empty.desc")}
                   BtnElm={
                     <LinkButton
                       to="https://jetkvm.com/docs/networking/remote-access"
                       size="SM"
                       theme="primary"
                       TrailingIcon={ArrowRightIcon}
-                      text="Learn more"
+                      text={t("common.learnMore")}
                     />
                   }
                 />
