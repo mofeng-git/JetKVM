@@ -30,6 +30,8 @@ JetKVM 是一套高性能、开源的 KVM over IP（Keyboard/Video/Mouse）软�
 - 服务器无人值守维护与故障排障
 - BIOS/引导层面的安装、配置与恢复
 
+![JetKVM 界面截图](https://github.com/user-attachments/assets/79a053f4-6d1c-45c3-9cc1-104df1b1551c)
+
 ## 📊 功能特性
 
 - 低时延远程视频：H.264 编码，流畅画面与交互
