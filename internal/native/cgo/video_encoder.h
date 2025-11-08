@@ -17,7 +17,8 @@ typedef enum {
 // 像素格式
 typedef enum {
     PIXEL_FORMAT_I420 = 0,  // YUV420 planar (Y, U, V separate)
-    PIXEL_FORMAT_NV12 = 1   // YUV420 semi-planar (Y, UV interleaved)
+    PIXEL_FORMAT_NV12 = 1,  // YUV420 semi-planar (Y, UV interleaved)
+    PIXEL_FORMAT_YUYV = 2   // YUV422 packed (YUYV interleaved)
 } pixel_format_t;
 
 // 编码器配置
@@ -28,6 +29,7 @@ typedef struct {
     int bitrate_kbps;
     int keyint;           // GOP size
     int repeat_headers;   // 1=每个IDR重复SPS/PPS
+    pixel_format_t input_format; // 输入格式（默认 NV12）
     
     // x264 specific
     char x264_preset[32];

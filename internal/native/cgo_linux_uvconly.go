@@ -11,7 +11,7 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -Lcgo/lib -ljknative -lx264 -lturbojpeg 
+#cgo LDFLAGS: -Lcgo/lib -ljknative -lyuv -lx264 -lturbojpeg
 #cgo CFLAGS: -Icgo -Icgo/include
 #include "ctrl.h"
 #include <stdlib.h>

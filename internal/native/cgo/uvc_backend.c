@@ -19,6 +19,8 @@
 #include "video_encoder.h" // 统一编码器接口
 
 #include <turbojpeg.h>
+#include <libyuv.h>
+
 #ifdef JETKVM_HAVE_MPP
 #include "dec_mppjpeg.h"
 #endif
@@ -217,39 +219,22 @@ static int init_turbojpeg() {
 static void yuyv_to_i420(const unsigned char *src, int width, int height,
                          unsigned char *dst_y, unsigned char *dst_u, unsigned char *dst_v,
                          int stride_y, int stride_uv) {
-    // width, height should be even
-    int w2 = width >> 1;
-    for (int y = 0; y < height; y += 2) {
-        const unsigned char *row0 = src + y * width * 2;
-        const unsigned char *row1 = row0 + width * 2;
-        unsigned char *Y0 = dst_y + y * stride_y;
-        unsigned char *Y1 = Y0 + stride_y;
-        unsigned char *U = dst_u + (y >> 1) * stride_uv;
-        unsigned char *V = dst_v + (y >> 1) * stride_uv;
-        for (int x = 0; x < w2; ++x) {
-            // row0: Y0 U0 Y1 V0
-            int idx = x * 4;
-            unsigned char y00 = row0[idx + 0];
-            unsigned char u0  = row0[idx + 1];
-            unsigned char y01 = row0[idx + 2];
-            unsigned char v0  = row0[idx + 3];
-            // row1: Y2 U1 Y3 V1
-            unsigned char y10 = row1[idx + 0];
-            unsigned char u1  = row1[idx + 1];
-            unsigned char y11 = row1[idx + 2];
-            unsigned char v1  = row1[idx + 3];
+    YUY2ToI420(src, width * 2,
+               dst_y, stride_y,
+               dst_u, stride_uv,
+               dst_v, stride_uv,
+               width, height);
+}
 
-            // Write Y
-            Y0[x*2 + 0] = y00;
-            Y0[x*2 + 1] = y01;
-            Y1[x*2 + 0] = y10;
-            Y1[x*2 + 1] = y11;
-
-            // Average U/V over 2x2 block
-            U[x] = (unsigned char)(((int)u0 + (int)u1 + 1) >> 1);
-            V[x] = (unsigned char)(((int)v0 + (int)v1 + 1) >> 1);
-        }
-    }
+static void nv12_to_i420(const unsigned char *src_nv12, int width, int height,
+                         unsigned char *dst_y, unsigned char *dst_u, unsigned char *dst_v,
+                         int stride_y, int stride_uv) {
+    NV12ToI420(src_nv12, width,
+               src_nv12 + width * height, width,
+               dst_y, stride_y,
+               dst_u, stride_uv,
+               dst_v, stride_uv,
+               width, height);
 }
 
 static void i420_to_nv12(const unsigned char *Y, const unsigned char *U, const unsigned char *V,
@@ -282,6 +267,22 @@ static int init_encoder() {
     config.bitrate_kbps = bitrate_kbps;
     config.keyint = keyint;
     config.repeat_headers = repeat_headers;
+    
+    // 根据 UVC 格式和编码器类型选择最佳输入格式
+    if (encoder_type == ENCODER_TYPE_MPP) {
+        // MPP 编码器：优先使用 YUYV/NV12 直通
+        if (uvc_pixfmt == V4L2_PIX_FMT_YUYV) {
+            config.input_format = PIXEL_FORMAT_YUYV;  // YUYV 直通！
+        } else if (uvc_pixfmt == V4L2_PIX_FMT_NV12) {
+            config.input_format = PIXEL_FORMAT_NV12;  // NV12 直通
+        } else {
+            config.input_format = PIXEL_FORMAT_NV12;  // 其他格式转 NV12
+        }
+    } else {
+        // x264 编码器：仅支持 I420
+        config.input_format = PIXEL_FORMAT_I420;
+    }
+    
     strncpy(config.x264_preset, x264_preset, sizeof(config.x264_preset) - 1);
     strncpy(config.x264_tune, x264_tune, sizeof(config.x264_tune) - 1);
     strncpy(config.x264_profile, x264_profile, sizeof(config.x264_profile) - 1);
@@ -295,9 +296,12 @@ static int init_encoder() {
     // 获取编码器期望的输入格式
     encoder_input_fmt = encoder->get_input_format(encoder_ctx);
     
-    log_info("UVC: encoder '%s' initialized, input format=%s",
-             encoder->name, 
-             encoder_input_fmt == PIXEL_FORMAT_I420 ? "I420" : "NV12");
+    const char *fmt_str = "UNKNOWN";
+    if (encoder_input_fmt == PIXEL_FORMAT_I420) fmt_str = "I420";
+    else if (encoder_input_fmt == PIXEL_FORMAT_NV12) fmt_str = "NV12";
+    else if (encoder_input_fmt == PIXEL_FORMAT_YUYV) fmt_str = "YUYV";
+    
+    log_info("UVC: encoder '%s' initialized, input format=%s", encoder->name, fmt_str);
     
     return 0;
 }
@@ -352,7 +356,6 @@ static void* uvc_thread_main(void* arg) {
                     debug_frame_count++;
                 }
                 
-                // ⭐ 零拷贝路径：直接获取 MPP frame（不拷贝到 tight buffer）
                 dec_mppjpeg_frame_t dec_frame = {0};
                 int dr = dec_mppjpeg_decode_zero_copy(mjpg_ptr, mjpg_size, &dec_frame);
                 if (dr != 0) { 
@@ -380,15 +383,14 @@ static void* uvc_thread_main(void* arg) {
                     video_report_format(true, NULL, (u_int16_t)uvc_width, (u_int16_t)uvc_height, (double)uvc_fps);
                 }
                 
-                // ⭐ 零拷贝：传递解码器的 stride 信息（关键优化）
                 video_frame_t frame = {0};
                 frame.data = dec_frame.data_ptr;
                 frame.size = (size_t)dec_frame.hor_stride * dec_frame.ver_stride * 3 / 2;
                 frame.format = PIXEL_FORMAT_NV12;
                 frame.width = iw;
                 frame.height = ih;
-                frame.stride_y = dec_frame.hor_stride;   // ⭐ 使用解码器的 stride
-                frame.stride_uv = dec_frame.hor_stride;  // ⭐ 使用解码器的 stride
+                frame.stride_y = dec_frame.hor_stride;
+                frame.stride_uv = dec_frame.hor_stride;
                 frame.pts_us = 0;
                 
                 encoded_packet_t packet = {0};
@@ -500,12 +502,73 @@ static void* uvc_thread_main(void* arg) {
                     }
                 }
             }
-        } else { // YUYV path
+        } else if (uvc_pixfmt == V4L2_PIX_FMT_YUYV) {
+            // YUYV → MPP 直通（零转换）
+            if (encoder_input_fmt == PIXEL_FORMAT_YUYV) {
+                const unsigned char *yuyv = (const unsigned char*)uvc_buffers[buf.index].start;
+                
+                video_frame_t frame = {0};
+                frame.data = (uint8_t*)yuyv;
+                frame.size = (size_t)uvc_width * uvc_height * 2;  // YUYV: 2 bytes/pixel
+                frame.format = PIXEL_FORMAT_YUYV;
+                frame.width = uvc_width;
+                frame.height = uvc_height;
+                frame.stride_y = uvc_width * 2;  // YUYV stride (bytes)
+                frame.stride_uv = 0;             // YUYV 没有独立 UV plane
+                frame.pts_us = 0;
+                
+                encoded_packet_t packet = {0};
+                int enc_ret = encoder->encode(encoder_ctx, &frame, &packet);
+                if (enc_ret < 0) {
+                    log_warn("UVC: YUYV encode failed");
+                } else if (packet.data && packet.size > 0) {
+                    video_send_frame(packet.data, (ssize_t)packet.size);
+                    encoder_packet_free(&packet);
+                }
+                goto requeue;
+            }
+            
+            // libyuv CPU 转换
             const unsigned char *yuyv = (const unsigned char*)uvc_buffers[buf.index].start;
             unsigned char* Y = yuv_buf;
             unsigned char* U = Y + uvc_width * uvc_height;
             unsigned char* V = U + (uvc_width/2) * (uvc_height/2);
             yuyv_to_i420(yuyv, uvc_width, uvc_height, Y, U, V, uvc_width, uvc_width/2);
+        } else if (uvc_pixfmt == V4L2_PIX_FMT_NV12) {
+            if (encoder_input_fmt == PIXEL_FORMAT_NV12) {
+                const unsigned char *nv12 = (const unsigned char*)uvc_buffers[buf.index].start;
+                
+                video_frame_t frame = {0};
+                frame.data = (uint8_t*)nv12;
+                frame.size = (size_t)uvc_width * uvc_height * 3 / 2;
+                frame.format = PIXEL_FORMAT_NV12;
+                frame.width = uvc_width;
+                frame.height = uvc_height;
+                frame.stride_y = uvc_width;
+                frame.stride_uv = uvc_width;
+                frame.pts_us = 0;
+                
+                encoded_packet_t packet = {0};
+                int enc_ret = encoder->encode(encoder_ctx, &frame, &packet);
+                if (enc_ret < 0) {
+                    log_warn("UVC: encoder encode failed");
+                } else if (packet.data && packet.size > 0) {
+                    video_send_frame(packet.data, (ssize_t)packet.size);
+                    encoder_packet_free(&packet);
+                }
+                goto requeue;
+            }
+            
+            // x264 需要 I420，执行转换
+            const unsigned char *nv12 = (const unsigned char*)uvc_buffers[buf.index].start;
+            unsigned char* Y = yuv_buf;
+            unsigned char* U = Y + uvc_width * uvc_height;
+            unsigned char* V = U + (uvc_width/2) * (uvc_height/2);
+            nv12_to_i420(nv12, uvc_width, uvc_height, Y, U, V, uvc_width, uvc_width/2);
+        } else {
+            log_warn("UVC: unsupported pixel format 0x%x, skipping frame", uvc_pixfmt);
+            (void)xioctl(uvc_fd, VIDIOC_QBUF, &buf);
+            continue;
         }
 
         // 统一编码逻辑
@@ -571,7 +634,19 @@ int uvc_init_from_env() {
     s = getenv("JETKVM_UVC_WIDTH"); if (s) { int v = atoi(s); if (v>0) uvc_width = v; }
     s = getenv("JETKVM_UVC_HEIGHT"); if (s) { int v = atoi(s); if (v>0) uvc_height = v; }
     s = getenv("JETKVM_UVC_FPS"); if (s) { int v = atoi(s); if (v>0) uvc_fps = v; }
-    s = getenv("JETKVM_UVC_FORMAT"); if (s && s[0]) { if (strcasecmp(s, "YUYV")==0 || strcasecmp(s, "YUY2")==0) uvc_pixfmt = V4L2_PIX_FMT_YUYV; else uvc_pixfmt = V4L2_PIX_FMT_MJPEG; }
+    s = getenv("JETKVM_UVC_FORMAT"); 
+    if (s && s[0]) { 
+        if (strcasecmp(s, "YUYV")==0 || strcasecmp(s, "YUY2")==0) 
+            uvc_pixfmt = V4L2_PIX_FMT_YUYV; 
+        else if (strcasecmp(s, "NV12")==0) 
+            uvc_pixfmt = V4L2_PIX_FMT_NV12;
+        else if (strcasecmp(s, "MJPEG")==0 || strcasecmp(s, "MJPG")==0)
+            uvc_pixfmt = V4L2_PIX_FMT_MJPEG;
+        else {
+            log_warn("UVC: Unknown format '%s', using MJPEG", s);
+            uvc_pixfmt = V4L2_PIX_FMT_MJPEG;
+        }
+    }
     s = getenv("JETKVM_BITRATE_KBPS"); if (s) { int v = atoi(s); if (v>0) bitrate_kbps = v; }
     s = getenv("JETKVM_KEYINT"); if (s) { int v = atoi(s); if (v>0) keyint = v; }
     s = getenv("JETKVM_REPEAT_HEADERS"); if (s) { int v = atoi(s); repeat_headers = (v!=0); }
@@ -617,7 +692,7 @@ int uvc_init_from_env() {
 #ifdef JETKVM_HAVE_MPP
         if (use_mpp_decoder) {
             log_info("UVC: Using MPP JPEG decoder");
-            if (dec_mppjpeg_init() < 0) {
+            if (dec_mppjpeg_init(uvc_width, uvc_height) < 0) {
                 log_error("UVC: Failed to init MPP JPEG decoder");
                 return -1;
             }
@@ -637,7 +712,14 @@ int uvc_init_from_env() {
 #endif
     } else if (uvc_pixfmt == V4L2_PIX_FMT_YUYV) {
         log_info("UVC: Using YUYV input format (will convert to I420)");
-        // allocate YUV buffer for YUYV conversion
+        yuv_buf_size = (size_t)uvc_width * (size_t)uvc_height * 3 / 2;
+        yuv_buf = (unsigned char*)malloc(yuv_buf_size);
+        if (!yuv_buf) {
+            log_error("UVC: Failed to allocate YUV conversion buffer");
+            return -1;
+        }
+    } else if (uvc_pixfmt == V4L2_PIX_FMT_NV12) {
+        log_info("UVC: Using NV12 input format (will convert to I420)");
         yuv_buf_size = (size_t)uvc_width * (size_t)uvc_height * 3 / 2;
         yuv_buf = (unsigned char*)malloc(yuv_buf_size);
         if (!yuv_buf) {
@@ -657,10 +739,14 @@ int uvc_init_from_env() {
         return -1;
     }
     
+    const char *fmt_name = "UNKNOWN";
+    if (uvc_pixfmt == V4L2_PIX_FMT_MJPEG) fmt_name = "MJPEG";
+    else if (uvc_pixfmt == V4L2_PIX_FMT_YUYV) fmt_name = "YUYV";
+    else if (uvc_pixfmt == V4L2_PIX_FMT_NV12) fmt_name = "NV12";
+    
     log_info("UVC: initialized device=%s %dx%d@%dfps fmt=%s encoder=%s bitrate=%dkbps",
              uvc_dev_path, uvc_width, uvc_height, uvc_fps,
-             (uvc_pixfmt==V4L2_PIX_FMT_YUYV?"YUYV":"MJPG"),
-             encoder->name, bitrate_kbps);
+             fmt_name, encoder->name, bitrate_kbps);
     return 0;
 }
 

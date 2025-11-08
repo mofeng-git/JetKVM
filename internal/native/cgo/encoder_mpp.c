@@ -30,6 +30,7 @@ typedef struct {
     int stride_w;
     int stride_h;
     int fps;
+    pixel_format_t input_format;  // 输入格式
     int initialized;
 } mpp_encoder_ctx_t;
 
@@ -43,6 +44,7 @@ static int mpp_encoder_init(const encoder_config_t *config, void **ctx)
     enc->width = config->width;
     enc->height = config->height;
     enc->fps = config->fps;
+    enc->input_format = config->input_format;
     enc->stride_w = (config->width + 15) & ~15;
     enc->stride_h = (config->height + 15) & ~15;
     
@@ -65,11 +67,23 @@ static int mpp_encoder_init(const encoder_config_t *config, void **ctx)
         return -1;
     }
     
+    // 根据输入格式设置 MPP 格式和 stride
+    MppFrameFormat mpp_fmt;
+    int hor_stride;
+    
+    if (enc->input_format == PIXEL_FORMAT_YUYV) {
+        mpp_fmt = MPP_FMT_YUV422_YUYV;
+        hor_stride = enc->stride_w * 2;  // YUYV: 2 bytes/pixel
+    } else {
+        mpp_fmt = MPP_FMT_YUV420SP;  // NV12/I420 → NV12
+        hor_stride = enc->stride_w;
+    }
+    
     if (mpp_enc_cfg_set_s32(enc->cfg, "prep:width", enc->width) ||
         mpp_enc_cfg_set_s32(enc->cfg, "prep:height", enc->height) ||
-        mpp_enc_cfg_set_s32(enc->cfg, "prep:hor_stride", enc->stride_w) ||
+        mpp_enc_cfg_set_s32(enc->cfg, "prep:hor_stride", hor_stride) ||
         mpp_enc_cfg_set_s32(enc->cfg, "prep:ver_stride", enc->stride_h) ||
-        mpp_enc_cfg_set_s32(enc->cfg, "prep:format", MPP_FMT_YUV420SP))
+        mpp_enc_cfg_set_s32(enc->cfg, "prep:format", mpp_fmt))
         goto cleanup;
     
     int bps = config->bitrate_kbps * 1000;
@@ -88,8 +102,7 @@ static int mpp_encoder_init(const encoder_config_t *config, void **ctx)
     
     if (mpp_enc_cfg_set_s32(enc->cfg, "h264:profile", 66) ||
         mpp_enc_cfg_set_s32(enc->cfg, "h264:level", 31) ||
-        mpp_enc_cfg_set_s32(enc->cfg, "h264:cabac_en", 0) ||
-        mpp_enc_cfg_set_s32(enc->cfg, "h264:max_bframes", 0))
+        mpp_enc_cfg_set_s32(enc->cfg, "h264:cabac_en", 0))
         goto cleanup;
     
     if (enc->api->control(enc->ctx, MPP_ENC_SET_CFG, enc->cfg) != MPP_OK)
@@ -104,7 +117,13 @@ static int mpp_encoder_init(const encoder_config_t *config, void **ctx)
                                       MPP_BUFFER_TYPE_DRM | MPP_BUFFER_FLAGS_CACHABLE) != MPP_OK)
         goto cleanup;
     
-    size_t frame_size = (size_t)enc->stride_w * enc->stride_h * 3 / 2;
+    // 根据格式计算帧大小
+    size_t frame_size;
+    if (enc->input_format == PIXEL_FORMAT_YUYV) {
+        frame_size = (size_t)hor_stride * enc->stride_h;  // YUYV: width*2 * height
+    } else {
+        frame_size = (size_t)enc->stride_w * enc->stride_h * 3 / 2;  // NV12: 1.5 bytes/pixel
+    }
     
     if (mpp_buffer_get(enc->buf_grp, &enc->frm_buf, frame_size) != MPP_OK ||
         mpp_buffer_get(enc->buf_grp, &enc->pkt_buf, frame_size) != MPP_OK ||
@@ -113,9 +132,9 @@ static int mpp_encoder_init(const encoder_config_t *config, void **ctx)
     
     mpp_frame_set_width(enc->frame, enc->width);
     mpp_frame_set_height(enc->frame, enc->height);
-    mpp_frame_set_hor_stride(enc->frame, enc->stride_w);
+    mpp_frame_set_hor_stride(enc->frame, hor_stride);
     mpp_frame_set_ver_stride(enc->frame, enc->stride_h);
-    mpp_frame_set_fmt(enc->frame, MPP_FMT_YUV420SP);
+    mpp_frame_set_fmt(enc->frame, mpp_fmt);  // 使用前面设置的格式
     mpp_frame_set_buffer(enc->frame, enc->frm_buf);
     
     enc->packet = NULL;
@@ -142,17 +161,56 @@ cleanup:
 
 static int mpp_encoder_encode(void *ctx, const video_frame_t *frame, encoded_packet_t *packet)
 {
-    if (!ctx || !frame || !packet || frame->format != PIXEL_FORMAT_NV12) return -1;
+    if (!ctx || !frame || !packet) return -1;
     
     mpp_encoder_ctx_t *enc = (mpp_encoder_ctx_t*)ctx;
     if (!enc->initialized) return -1;
     
+    // 验证输入格式匹配
+    if (frame->format != enc->input_format) return -1;
+    
     uint8_t *dst = (uint8_t*)mpp_buffer_get_ptr(enc->frm_buf);
     if (!dst) return -1;
     
+    // YUYV 格式处理
+    if (enc->input_format == PIXEL_FORMAT_YUYV) {
+        int hor_stride = enc->stride_w * 2;  // YUYV stride
+        
+        // 快速路径：stride 匹配
+        if (frame->stride_y == hor_stride) {
+            size_t total_size = (size_t)hor_stride * enc->stride_h;
+            if (frame->size >= total_size) {
+                __builtin_prefetch(frame->data, 0, 3);
+                __builtin_prefetch(dst, 1, 3);
+                memcpy(dst, frame->data, total_size);
+                goto encode_ready;
+            }
+        }
+        
+        // 慢速路径：逐行拷贝
+        int line_bytes = enc->width * 2;  // YUYV: 2 bytes/pixel
+        if (frame->stride_y > 0) {
+            for (int y = 0; y < enc->height; y++) {
+                memcpy(dst + y * hor_stride,
+                       frame->data + y * frame->stride_y,
+                       line_bytes);
+            }
+        } else {
+            for (int y = 0; y < enc->height; y++) {
+                memcpy(dst + y * hor_stride,
+                       frame->data + y * line_bytes,
+                       line_bytes);
+            }
+        }
+        goto encode_ready;
+    }
+    
+    // NV12 格式处理（原有逻辑）
     if (frame->stride_y == enc->stride_w && frame->stride_uv == enc->stride_w) {
         size_t total_size = (size_t)enc->stride_w * enc->stride_h * 3 / 2;
         if (frame->size >= total_size) {
+            __builtin_prefetch(frame->data, 0, 3);
+            __builtin_prefetch(dst, 1, 3);
             memcpy(dst, frame->data, total_size);
             goto encode_ready;
         }
@@ -301,8 +359,10 @@ static int mpp_encoder_reconfigure(void *ctx, const encoder_config_t *config)
 
 static pixel_format_t mpp_encoder_get_input_format(void *ctx)
 {
-    (void)ctx;
-    return PIXEL_FORMAT_NV12;
+    if (!ctx) return PIXEL_FORMAT_NV12;
+    
+    mpp_encoder_ctx_t *enc = (mpp_encoder_ctx_t*)ctx;
+    return enc->input_format;
 }
 
 static void mpp_encoder_destroy(void **ctx)

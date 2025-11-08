@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(USE_RK "Build with Rockchip media SDK (RV1106)" ON)
 option(USE_LVGL "Build with LVGL UI (requires lvgl)" ON)
+option(USE_LIBYUV "Use libyuv for accelerated format conversion" ON)
 
 # Rockchip SDK paths (used only when USE_RK=ON)
 set(RK_SDK_BASE "/opt/jetkvm-native-buildkit")
@@ -96,7 +97,67 @@ if(USE_RK)
         ${RK_MEDIA_INCLUDE_PATH}/libdrm
         /usr/include/rockchip
     )
-    target_compile_definitions(jknative PRIVATE JETKVM_HAVE_MPP=1)
+    target_compile_definitions(jknative PRIVATE 
+        JETKVM_HAVE_MPP=1
+    )
+endif()
+
+# libyuv for accelerated format conversion (required)
+set(LIBYUV_FOUND FALSE)
+
+# Try pkg-config first (rarely works for libyuv)
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    if(CMAKE_CROSSCOMPILING)
+        set(ENV{PKG_CONFIG_PATH} "/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu/pkgconfig:/usr/share/pkgconfig")
+    endif()
+    pkg_check_modules(LIBYUV QUIET libyuv)
+endif()
+
+# Manual search (more reliable for libyuv)
+if(NOT LIBYUV_FOUND)
+    set(_LIBYUV_INCLUDE_PATHS "/usr/include")
+    set(_LIBYUV_LIB_PATHS "/usr/lib")
+    
+    if(CMAKE_CROSSCOMPILING)
+        list(APPEND _LIBYUV_INCLUDE_PATHS 
+            "/usr/include/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
+        )
+        list(APPEND _LIBYUV_LIB_PATHS 
+            "/usr/lib/${CMAKE_SYSTEM_PROCESSOR}-linux-gnu"
+        )
+    endif()
+    
+    find_path(LIBYUV_INCLUDE_DIR 
+        NAMES libyuv.h
+        PATHS ${_LIBYUV_INCLUDE_PATHS}
+        PATH_SUFFIXES libyuv
+        NO_DEFAULT_PATH
+    )
+    
+    find_library(LIBYUV_LIBRARY 
+        NAMES yuv libyuv
+        PATHS ${_LIBYUV_LIB_PATHS}
+        NO_DEFAULT_PATH
+    )
+    
+    if(LIBYUV_INCLUDE_DIR AND LIBYUV_LIBRARY)
+        set(LIBYUV_FOUND TRUE)
+        message(STATUS "libyuv found: ${LIBYUV_LIBRARY}")
+        message(STATUS "  include: ${LIBYUV_INCLUDE_DIR}")
+    endif()
+endif()
+
+# Apply settings (required)
+if(LIBYUV_FOUND)
+    if(LIBYUV_INCLUDE_DIRS)
+        target_include_directories(jknative PRIVATE ${LIBYUV_INCLUDE_DIRS})
+    elseif(LIBYUV_INCLUDE_DIR)
+        target_include_directories(jknative PRIVATE ${LIBYUV_INCLUDE_DIR})
+    endif()
+    message(STATUS "libyuv: enabled (SIMD accelerated format conversion)")
+else()
+    message(FATAL_ERROR "libyuv not found! Install with: apt-get install libyuv-dev${CMAKE_CROSSCOMPILING ? \":${CMAKE_SYSTEM_PROCESSOR}\" : \"\"}")
 endif()
 
 # Set library search path
@@ -108,15 +169,28 @@ endif()
 target_link_libraries(jknative PRIVATE pthread m)
 # x264和turbojpeg对所有构建都需要（UVC后端）
 target_link_libraries(jknative PRIVATE x264 turbojpeg)
+
+# libyuv for format conversion acceleration (always linked)
+if(LIBYUV_LIBRARIES)
+    target_link_libraries(jknative PRIVATE ${LIBYUV_LIBRARIES})
+    message(STATUS "Linking libyuv: ${LIBYUV_LIBRARIES}")
+elseif(LIBYUV_LIBRARY)
+    target_link_libraries(jknative PRIVATE ${LIBYUV_LIBRARY})
+    message(STATUS "Linking libyuv: ${LIBYUV_LIBRARY}")
+else()
+    # Fallback to library name
+    target_link_libraries(jknative PRIVATE yuv)
+    message(STATUS "Linking libyuv: yuv (fallback)")
+endif()
+
 # RK专有库
 if(USE_RK)
-    # 注释：turbojpeg已在上面链接
+    # MPP and rockit libraries
+    target_link_libraries(jknative PRIVATE rockchip_mpp rockit)
+    message(STATUS "RK libraries: rockchip_mpp, rockit")
 endif()
 if(USE_LVGL)
     target_link_libraries(jknative PRIVATE lvgl::lvgl)
-endif()
-if(USE_RK)
-    target_link_libraries(jknative PRIVATE rockit rockchip_mpp rga)
 endif()
 
 install(TARGETS jknative DESTINATION lib)

@@ -21,8 +21,34 @@ static MppFrame d_frame = NULL;
 static MppBuffer d_frm_buf = NULL;
 static uint8_t *nv12_buf = NULL;
 static size_t nv12_cap = 0;
+static RK_U32 d_frm_buf_size = 0;  // 当前分配的 frame buffer 大小
 
-int dec_mppjpeg_init()
+// 根据分辨率计算所需的 buffer 大小
+static RK_U32 calculate_buffer_size(int width, int height)
+{
+    if (width <= 0 || height <= 0) {
+        // 默认：4K (3840x2160)
+        width = 3840;
+        height = 2160;
+    }
+    
+    // 对齐：宽度和高度都对齐到 16
+    int stride_w = (width + 15) & ~15;
+    int stride_h = (height + 15) & ~15;
+    
+    // NV12 格式：1.5 bytes/pixel
+    // MPP 需要额外空间（对齐 + 元数据），实际约为 2.0-2.2 倍
+    // 使用 2.2 倍作为安全余量
+    RK_U32 buf_size = (RK_U32)stride_w * stride_h * 22 / 10;
+    
+    // 最小 1MB，最大 20MB（防止异常值）
+    if (buf_size < 1024 * 1024) buf_size = 1024 * 1024;
+    if (buf_size > 20 * 1024 * 1024) buf_size = 20 * 1024 * 1024;
+    
+    return buf_size;
+}
+
+int dec_mppjpeg_init(int width, int height)
 {
     if (inited) return 0;
     
@@ -38,8 +64,6 @@ int dec_mppjpeg_init()
     if (mpp_dec_cfg_init(&cfg) == MPP_OK && 
         d_api->control(d_ctx, MPP_DEC_GET_CFG, cfg) == MPP_OK) {
         mpp_dec_cfg_set_u32(cfg, "base:split_parse", 1);
-        mpp_dec_cfg_set_u32(cfg, "base:fast_parse", 1);
-        mpp_dec_cfg_set_u32(cfg, "base:fast_mode", 1);
         d_api->control(d_ctx, MPP_DEC_SET_CFG, cfg);
         mpp_dec_cfg_deinit(cfg);
     }
@@ -52,7 +76,13 @@ int dec_mppjpeg_init()
         mpp_buffer_group_get_internal(&d_pkt_grp, MPP_BUFFER_TYPE_NORMAL) != MPP_OK)
         return -1;
     
-    RK_U32 buf_size = 1936 * 1088 * 4;
+    // 根据分辨率动态计算 buffer 大小
+    RK_U32 buf_size = calculate_buffer_size(width, height);
+    d_frm_buf_size = buf_size;
+    
+    log_info("mppjpeg: init with resolution %dx%d, buffer size=%u bytes (%.1f MB)",
+             width > 0 ? width : 3840, height > 0 ? height : 2160,
+             buf_size, buf_size / (1024.0 * 1024.0));
     
     if (mpp_buffer_group_get_internal(&d_frm_grp, MPP_BUFFER_TYPE_DRM | MPP_BUFFER_FLAGS_CACHABLE) != MPP_OK &&
         mpp_buffer_group_get_internal(&d_frm_grp, MPP_BUFFER_TYPE_ION) != MPP_OK &&

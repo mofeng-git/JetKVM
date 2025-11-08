@@ -20,7 +20,7 @@ typedef struct {
     int ver_stride;
 } dec_mppjpeg_frame_t;
 
-int dec_mppjpeg_init();
+int dec_mppjpeg_init(int width, int height);
 
 // Legacy: Decode to tight NV12 buffer (copies data)
 int dec_mppjpeg_decode(const uint8_t *data, size_t len,
