@@ -132,13 +132,11 @@ if(NOT LIBYUV_FOUND)
         NAMES libyuv.h
         PATHS ${_LIBYUV_INCLUDE_PATHS}
         PATH_SUFFIXES libyuv
-        NO_DEFAULT_PATH
     )
     
     find_library(LIBYUV_LIBRARY 
         NAMES yuv libyuv
         PATHS ${_LIBYUV_LIB_PATHS}
-        NO_DEFAULT_PATH
     )
     
     if(LIBYUV_INCLUDE_DIR AND LIBYUV_LIBRARY)
@@ -157,9 +155,12 @@ if(LIBYUV_FOUND)
     endif()
     message(STATUS "libyuv: enabled (SIMD accelerated format conversion)")
 else()
-    message(FATAL_ERROR "libyuv not found! Install with: apt-get install libyuv-dev${CMAKE_CROSSCOMPILING ? \":${CMAKE_SYSTEM_PROCESSOR}\" : \"\"}")
+    if(CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_PROCESSOR)
+        message(FATAL_ERROR "libyuv not found! Install with: apt-get install libyuv-dev:${CMAKE_SYSTEM_PROCESSOR}")
+    else()
+        message(FATAL_ERROR "libyuv not found! Install with: apt-get install libyuv-dev")
+    endif()
 endif()
-
 # Set library search path
 if(USE_RK)
     target_link_directories(jknative PRIVATE ${RK_APP_MEDIA_LIBS_PATH})

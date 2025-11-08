@@ -1,29 +1,67 @@
 FROM golang:1.24.4-bookworm AS builder
 
+ARG TARGETARCH
+
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
       ca-certificates curl gnupg \
-      build-essential cmake make ninja-build pkg-config git \
-      libx264-dev libturbojpeg0-dev && \
+      build-essential cmake make ninja-build pkg-config git meson \
+      libx264-dev libturbojpeg0-dev libyuv-dev && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get update && DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends nodejs && \
     node -v && npm -v && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /opt/mpp-libs
+
+# Build Rockchip MPP and RGA only on arm64; stage installed libs under /opt/mpp-libs
+RUN if [ "${TARGETARCH}" = "arm64" ]; then \
+        set -eux; \
+        export COMMON_CFLAGS='-O2 -pipe -fPIC -fstack-protector-strong -D_FORTIFY_SOURCE=2'; \
+        export CFLAGS="$COMMON_CFLAGS -march=armv8-a"; \
+        export CXXFLAGS="$CFLAGS"; \
+        git clone --depth=1 https://github.com/rockchip-linux/mpp.git /tmp/rkmpp; \
+        mkdir -p /tmp/rkmpp/rkmpp_build && cd /tmp/rkmpp/rkmpp_build; \
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TEST=OFF \
+               -DCMAKE_C_FLAGS_RELEASE="$CFLAGS" -DCMAKE_CXX_FLAGS_RELEASE="$CXXFLAGS" ..; \
+        make -j"$(nproc)"; \
+        make install; \
+        git clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git /tmp/rkrga; \
+        cd /tmp/; \
+        meson setup rkrga rkrga_build --prefix=/usr --libdir=lib --buildtype=release -Doptimization=2 \
+               -Dc_args="$CFLAGS" -Dcpp_args="$CXXFLAGS -fpermissive" -Dlibdrm=false -Dlibrga_demo=false; \
+        ninja -C rkrga_build install; \
+        mkdir -p /opt/mpp-libs; \
+        bash -lc 'shopt -s nullglob; for p in \
+            /usr/lib/aarch64-linux-gnu/librockchip_mpp.so* \
+            /usr/lib/librockchip_mpp.so* \
+            /usr/lib/aarch64-linux-gnu/librga.so* \
+            /usr/lib/librga.so*; do cp -av "$p" /opt/mpp-libs/; done'; \
+        rm -rf /tmp/rkmpp /tmp/rkrga /tmp/rkrga_build; \
+    fi
 
 WORKDIR /src
 
 COPY . .
 
-# Build UVC-only native static library (no RK, no LVGL)
+# Build native lib; arm64 enables RK (MPP) and Go build without 'uvconly' tag
 RUN rm -rf internal/native/cgo/build-ninja internal/native/cgo/_stage && \
     mkdir -p internal/native/cgo/lib && \
-    cmake -S internal/native/cgo -B /tmp/build-native -G Ninja \
-      -DCMAKE_BUILD_TYPE=Release -DUSE_RK=OFF -DUSE_LVGL=OFF && \
+    if [ "${TARGETARCH}" = "arm64" ]; then \
+      cmake -S internal/native/cgo -B /tmp/build-native -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DUSE_RK=ON -DUSE_LVGL=OFF; \
+    else \
+      cmake -S internal/native/cgo -B /tmp/build-native -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DUSE_RK=OFF -DUSE_LVGL=OFF; \
+    fi && \
     cmake --build /tmp/build-native -j && \
     cmake --install /tmp/build-native --prefix internal/native/cgo/_stage && \
     cp -v internal/native/cgo/_stage/lib/libjknative.a internal/native/cgo/lib/ && \
     make frontend && \
     go mod download && \
     go mod verify && \
-    go build -tags "uvconly netgo timetzdata nomsgpack" -o /out/jetkvm_app ./cmd
+    if [ "${TARGETARCH}" = "arm64" ]; then \
+      CGO_ENABLED=1 go build -tags "netgo timetzdata nomsgpack" -o /out/jetkvm_app ./cmd; \
+    else \
+      CGO_ENABLED=1 go build -tags "uvconly netgo timetzdata nomsgpack" -o /out/jetkvm_app ./cmd; \
+    fi

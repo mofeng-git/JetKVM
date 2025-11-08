@@ -29,12 +29,13 @@ if [[ $FIRST_RUN -eq 1 ]]; then
     filter+=" | .video.device=\"/dev/video${VIDEONUM}\""
   fi
 
-  # VIDEOFORMAT -> MJPG|YUYV
+  # VIDEOFORMAT -> MJPG|YUYV|NV12
   if [[ -n "${VIDEOFORMAT:-}" ]]; then
     fmt=$(echo "$VIDEOFORMAT" | tr '[:upper:]' '[:lower:]')
     case "$fmt" in
       mjpg|mjpeg) fmtOut="MJPG" ;;
       yuyv|yuy2) fmtOut="YUYV" ;;
+      nv12)      fmtOut="NV12" ;;
       *) fmtOut="MJPG" ;;
     esac
     filter+=" | .video.format=\"${fmtOut}\""
@@ -52,6 +53,16 @@ if [[ $FIRST_RUN -eq 1 ]]; then
   fi
   if [[ -n "${VIDEOBITRATE:-}" ]]; then
     filter+=" | .video.bitrate_kbps=${VIDEOBITRATE}"
+  fi
+
+  # VIDEOENCODER -> x264 | mpp (default x264)
+  if [[ -n "${VIDEOENCODER:-}" ]]; then
+    enc=$(echo "$VIDEOENCODER" | tr '[:upper:]' '[:lower:]')
+    case "$enc" in
+      x264|mpp) ;;   # valid as-is
+      *) enc="x264" ;; # fallback
+    esac
+    filter+=" | .video.encoder=\"${enc}\""
   fi
 
   # Ensure backend/encoder defaults remain

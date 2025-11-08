@@ -32,7 +32,7 @@ JetKVM 是一套高性能、开源的 KVM over IP（Keyboard/Video/Mouse）软�
 
 ## 📊 功能特性
 
-- 低时延远程视频：H.264 编码，，流畅画面与交互
+- 低时延远程视频：H.264 编码，流畅画面与交互
 - WebRTC 远程访问：可选对接 JetKVM Cloud，安全、穿透友好
 - 开源&可定制：后端 Go、前端 TypeScript，支持通过 SSH 登录设备调试
 - 外设虚拟化：
@@ -41,8 +41,6 @@ JetKVM 是一套高性能、开源的 KVM over IP（Keyboard/Video/Mouse）软�
   - 串口控制台（可选）
 
 > 目前未包含音频采集/转发能力。
-
-> 目前为 libx264 软件编码，尚未支持硬件编码。
 
 ## 项目状态与限制
 
@@ -93,12 +91,15 @@ sudo docker run --name jetkvm -itd --privileged=true \
 
 
 - `VIDEONUM`：UVC 设备编号， `/dev/video{N}`；默认 `0`。
-- `VIDEOFORMAT`：采集格式，`mjpeg|mjpg` → `MJPG`；`yuyv|yuy2` → `YUYV`；默认 `mjpeg`。
+- `VIDEOFORMAT`：采集格式，`mjpeg` → `MJPG`；`yuyv` → `YUYV`；`nv12` → `NV12`；默认 `mjpeg`。
 - `VIDEOWIDTH`：视频宽度，默认 `1280`。
 - `VIDEOHEIGHT`：视频高度，默认 `720`。
 - `VIDEOFPS`：帧率，默认 `30`。
 - `VIDEOBITRATE`：码率（kbps），默认 `8000`。
+- `VIDEOENCODER`：使用的 h264 编码器，`x264`（软件编码，默认）；`mpp`（mpp 硬件编码）。
 - `HTTPPORT`：HTTP 端口，默认 `8080`。
+
+性能表现：NV12 > YUYV > MJPEG，如果采集卡支持 1080p60fps 的 YUYV 或 NV12 视频输入，请优先选用 NV12，其次 YUYV ，最后 MJPEG。
 
 ### 报告问题
 
