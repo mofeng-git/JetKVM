@@ -421,12 +421,12 @@ func authenticateSession(ctx context.Context, c *websocket.Conn, req WebRTCSessi
 }
 
 func handleSessionRequest(
-	ctx context.Context,
-	c *websocket.Conn,
-	req WebRTCSessionRequest,
-	isCloudConnection bool,
-	source string,
-	scopedLogger *zerolog.Logger,
+    ctx context.Context,
+    c *websocket.Conn,
+    req WebRTCSessionRequest,
+    isCloudConnection bool,
+    source string,
+    scopedLogger *zerolog.Logger,
 ) error {
 	var sourceType string
 	if isCloudConnection {
@@ -448,13 +448,15 @@ func handleSessionRequest(
 		}
 	}
 
-	session, err := newSession(SessionConfig{
-		ws:         c,
-		IsCloud:    isCloudConnection,
-		LocalIP:    req.IP,
-		ICEServers: req.ICEServers,
-		Logger:     scopedLogger,
-	})
+    session, err := newSession(SessionConfig{
+        ws:               c,
+        IsCloud:          isCloudConnection,
+        LocalIP:          req.IP,
+        ICEServerURLs:    req.ICEServers,
+        Logger:           scopedLogger,
+        LocalICEServers:  config.LocalIceServers,
+        LocalNAT1To1IP:   "", // optional: can be exposed later via config
+    })
 	if err != nil {
 		_ = wsjson.Write(context.Background(), c, gin.H{"error": err})
 		return err

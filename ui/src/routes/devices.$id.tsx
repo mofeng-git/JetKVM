@@ -407,12 +407,26 @@ export default function KvmIdRoute() {
     try {
       console.debug("[setupPeerConnection] Creating peer connection");
       setLoadingMessage("Creating peer connection...");
-      pc = new RTCPeerConnection({
-        // We only use STUN or TURN servers if we're in the cloud
-        ...(isInCloud && iceConfig?.iceServers
-          ? { iceServers: [iceConfig?.iceServers] }
-          : {}),
-      });
+
+      // Build RTCConfiguration for both cloud and local/device modes
+      let rtcConfig: RTCConfiguration = {};
+      if (isInCloud && iceConfig?.iceServers) {
+        rtcConfig.iceServers = [iceConfig.iceServers];
+      } else if (!isInCloud) {
+        try {
+          const resp = await api.GET(`${DEVICE_API}/webrtc/ice_config`);
+          if (resp.ok) {
+            const local = await resp.json();
+            if (local?.iceServers) {
+              rtcConfig.iceServers = [local.iceServers];
+            }
+          }
+        } catch (e) {
+          console.warn("[setupPeerConnection] Failed to fetch local ICE config", e);
+        }
+      }
+
+      pc = new RTCPeerConnection(rtcConfig);
 
       setPeerConnectionState(pc.connectionState);
       console.debug("[setupPeerConnection] Peer connection created", pc);

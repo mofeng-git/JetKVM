@@ -177,10 +177,12 @@ func setupRouter() *gin.Engine {
 		 */
 		protected.POST("/webrtc/session", handleWebRTCSession)
 		protected.GET("/webrtc/signaling/client", handleLocalWebRTCSignal)
-		protected.POST("/cloud/register", handleCloudRegister)
-		protected.GET("/cloud/state", handleCloudState)
-		protected.GET("/device", handleDevice)
-		protected.POST("/auth/logout", handleLogout)
+        protected.POST("/cloud/register", handleCloudRegister)
+        protected.GET("/cloud/state", handleCloudState)
+        protected.GET("/device", handleDevice)
+        // Local ICE config for device-mode WebRTC
+        protected.GET("/webrtc/ice_config", handleLocalIceConfig)
+        protected.POST("/auth/logout", handleLogout)
 
 		protected.POST("/auth/password-local", handleCreatePassword)
 		protected.PUT("/auth/password-local", handleUpdatePassword)
@@ -211,7 +213,7 @@ func handleWebRTCSession(c *gin.Context) {
 		return
 	}
 
-	session, err := newSession(SessionConfig{})
+    session, err := newSession(SessionConfig{LocalICEServers: config.LocalIceServers})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
@@ -501,6 +503,24 @@ func handleLogout(c *gin.Context) {
 	// Clear the auth cookie
 	c.SetCookie("authToken", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+}
+
+// handleLocalIceConfig exposes a minimal ICE configuration to the device-mode UI.
+// It returns a single RTCIceServer-like object to match the UI's expected shape.
+func handleLocalIceConfig(c *gin.Context) {
+    var iceServer interface{}
+    if len(config.LocalIceServers) > 0 {
+        // Return the first configured server for simplicity; UI accepts a single entry
+        s := config.LocalIceServers[0]
+        iceServer = gin.H{
+            "urls":       s.URLs,
+            "username":   s.Username,
+            "credential": s.Credential,
+        }
+    } else {
+        iceServer = nil
+    }
+    c.JSON(http.StatusOK, gin.H{"iceServers": iceServer})
 }
 
 func protectedMiddleware() gin.HandlerFunc {

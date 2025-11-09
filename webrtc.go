@@ -80,11 +80,18 @@ type hidQueueMessage struct {
 }
 
 type SessionConfig struct {
-	ICEServers []string
-	LocalIP    string
-	IsCloud    bool
-	ws         *websocket.Conn
-	Logger     *zerolog.Logger
+    // Connection source
+    IsCloud bool
+    ws      *websocket.Conn
+    Logger  *zerolog.Logger
+
+    // From cloud signaling (optional)
+    ICEServerURLs []string
+    LocalIP       string
+
+    // From local device config (used in non-cloud/local mode)
+    LocalICEServers []IceServer
+    LocalNAT1To1IP  string
 }
 
 func (s *Session) ExchangeOffer(offerStr string) (string, error) {
@@ -208,10 +215,10 @@ func getOnHidMessageHandler(session *Session, scopedLogger *zerolog.Logger, chan
 }
 
 func newSession(config SessionConfig) (*Session, error) {
-	webrtcSettingEngine := webrtc.SettingEngine{
-		LoggerFactory: logging.GetPionDefaultLoggerFactory(),
-	}
-	iceServer := webrtc.ICEServer{}
+    webrtcSettingEngine := webrtc.SettingEngine{
+        LoggerFactory: logging.GetPionDefaultLoggerFactory(),
+    }
+    iceServers := []webrtc.ICEServer{}
 
 	var scopedLogger *zerolog.Logger
 	if config.Logger != nil {
@@ -221,26 +228,46 @@ func newSession(config SessionConfig) (*Session, error) {
 		scopedLogger = webrtcLogger
 	}
 
-	if config.IsCloud {
-		if config.ICEServers == nil {
-			scopedLogger.Info().Msg("ICE Servers not provided by cloud")
-		} else {
-			iceServer.URLs = config.ICEServers
-			scopedLogger.Info().Interface("iceServers", iceServer.URLs).Msg("Using ICE Servers provided by cloud")
-		}
+    if config.IsCloud {
+        if config.ICEServerURLs == nil {
+            scopedLogger.Info().Msg("ICE Servers not provided by cloud")
+        } else {
+            iceServers = append(iceServers, webrtc.ICEServer{URLs: config.ICEServerURLs})
+            scopedLogger.Info().Interface("iceServers", config.ICEServerURLs).Msg("Using ICE Servers provided by cloud")
+        }
 
-		if config.LocalIP == "" || net.ParseIP(config.LocalIP) == nil {
-			scopedLogger.Info().Str("localIP", config.LocalIP).Msg("Local IP address not provided or invalid, won't set NAT1To1IPs")
-		} else {
-			webrtcSettingEngine.SetNAT1To1IPs([]string{config.LocalIP}, webrtc.ICECandidateTypeSrflx)
-			scopedLogger.Info().Str("localIP", config.LocalIP).Msg("Setting NAT1To1IPs")
-		}
-	}
+        if config.LocalIP == "" || net.ParseIP(config.LocalIP) == nil {
+            scopedLogger.Info().Str("localIP", config.LocalIP).Msg("Local IP address not provided or invalid, won't set NAT1To1IPs")
+        } else {
+            webrtcSettingEngine.SetNAT1To1IPs([]string{config.LocalIP}, webrtc.ICECandidateTypeSrflx)
+            scopedLogger.Info().Str("localIP", config.LocalIP).Msg("Setting NAT1To1IPs")
+        }
+    } else {
+        // Local mode: use LocalICEServers if provided via device config
+        if len(config.LocalICEServers) > 0 {
+            for _, s := range config.LocalICEServers {
+                if len(s.URLs) == 0 {
+                    continue
+                }
+                iceServers = append(iceServers, webrtc.ICEServer{
+                    URLs:       s.URLs,
+                    Username:   s.Username,
+                    Credential: s.Credential,
+                })
+            }
+            scopedLogger.Info().Interface("iceServers", iceServers).Msg("Using ICE Servers from local config")
+        }
 
-	api := webrtc.NewAPI(webrtc.WithSettingEngine(webrtcSettingEngine))
-	peerConnection, err := api.NewPeerConnection(webrtc.Configuration{
-		ICEServers: []webrtc.ICEServer{iceServer},
-	})
+        if config.LocalNAT1To1IP != "" && net.ParseIP(config.LocalNAT1To1IP) != nil {
+            webrtcSettingEngine.SetNAT1To1IPs([]string{config.LocalNAT1To1IP}, webrtc.ICECandidateTypeSrflx)
+            scopedLogger.Info().Str("localNAT1To1IP", config.LocalNAT1To1IP).Msg("Setting NAT1To1IPs (local)")
+        }
+    }
+
+    api := webrtc.NewAPI(webrtc.WithSettingEngine(webrtcSettingEngine))
+    peerConnection, err := api.NewPeerConnection(webrtc.Configuration{
+        ICEServers: iceServers,
+    })
 	if err != nil {
 		scopedLogger.Warn().Err(err).Msg("Failed to create PeerConnection")
 		return nil, err
