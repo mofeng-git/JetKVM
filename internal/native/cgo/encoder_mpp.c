@@ -168,101 +168,129 @@ static int mpp_encoder_encode(void *ctx, const video_frame_t *frame, encoded_pac
     
     // 验证输入格式匹配
     if (frame->format != enc->input_format) return -1;
+
+    // 为减少生命周期耦合，优先复用调用者的 MppFrame；如仅提供 MppBuffer，可临时构造一个 MppFrame。
+    int used_external = 0;
+    MppFrame use_frame = NULL;
     
-    uint8_t *dst = (uint8_t*)mpp_buffer_get_ptr(enc->frm_buf);
-    if (!dst) return -1;
-    
-    // YUYV 格式处理
-    if (enc->input_format == PIXEL_FORMAT_YUYV) {
-        int hor_stride = enc->stride_w * 2;  // YUYV stride
-        
-        // 快速路径：stride 匹配
-        if (frame->stride_y == hor_stride) {
-            size_t total_size = (size_t)hor_stride * enc->stride_h;
-            if (frame->size >= total_size) {
-                __builtin_prefetch(frame->data, 0, 3);
-                __builtin_prefetch(dst, 1, 3);
-                memcpy(dst, frame->data, total_size);
-                goto encode_ready;
-            }
-        }
-        
-        // 慢速路径：逐行拷贝
-        int line_bytes = enc->width * 2;  // YUYV: 2 bytes/pixel
-        if (frame->stride_y > 0) {
-            for (int y = 0; y < enc->height; y++) {
-                memcpy(dst + y * hor_stride,
-                       frame->data + y * frame->stride_y,
-                       line_bytes);
-            }
-        } else {
-            for (int y = 0; y < enc->height; y++) {
-                memcpy(dst + y * hor_stride,
-                       frame->data + y * line_bytes,
-                       line_bytes);
-            }
-        }
-        goto encode_ready;
-    }
-    
-    // NV12 格式处理（原有逻辑）
-    if (frame->stride_y == enc->stride_w && frame->stride_uv == enc->stride_w) {
-        size_t total_size = (size_t)enc->stride_w * enc->stride_h * 3 / 2;
-        if (frame->size >= total_size) {
-            __builtin_prefetch(frame->data, 0, 3);
-            __builtin_prefetch(dst, 1, 3);
-            memcpy(dst, frame->data, total_size);
-            goto encode_ready;
-        }
-    }
-    
-    if (frame->stride_y > 0 && frame->stride_y != enc->stride_w) {
-        for (int y = 0; y < enc->height; y++) {
-            memcpy(dst + y * enc->stride_w, 
-                   frame->data + y * frame->stride_y, 
-                   enc->width);
-        }
-    } else {
-        for (int y = 0; y < enc->height; y++) {
-            memcpy(dst + y * enc->stride_w,
-                   frame->data + y * enc->width,
-                   enc->width);
-        }
-    }
-    
-    uint8_t *dst_uv = dst + enc->stride_w * enc->stride_h;
-    const uint8_t *src_uv = frame->data + frame->width * frame->height;
-    
-    if (frame->stride_uv > 0 && frame->stride_uv != enc->stride_w) {
-        for (int y = 0; y < enc->height / 2; y++) {
-            memcpy(dst_uv + y * enc->stride_w,
-                   src_uv + y * frame->stride_uv,
-                   enc->width);
-        }
-    } else {
-        for (int y = 0; y < enc->height / 2; y++) {
-            memcpy(dst_uv + y * enc->stride_w,
-                   src_uv + y * enc->width,
-                   enc->width);
+    if (frame->rk_mpp_frame && enc->input_format == PIXEL_FORMAT_NV12) {
+        use_frame = (MppFrame)frame->rk_mpp_frame;
+        used_external = 1;
+    } else if (frame->rk_mpp_buffer && enc->input_format == PIXEL_FORMAT_NV12) {
+        if (mpp_frame_init(&use_frame) == MPP_OK) {
+            mpp_frame_set_width(use_frame, enc->width);
+            mpp_frame_set_height(use_frame, enc->height);
+            mpp_frame_set_hor_stride(use_frame, frame->stride_y > 0 ? frame->stride_y : enc->stride_w);
+            mpp_frame_set_ver_stride(use_frame, frame->stride_uv > 0 ? frame->stride_uv : enc->stride_h);
+            mpp_frame_set_fmt(use_frame, MPP_FMT_YUV420SP);
+            mpp_frame_set_buffer(use_frame, (MppBuffer)frame->rk_mpp_buffer);
+            used_external = 2; // 临时构造的外部帧
         }
     }
 
-encode_ready:
-    
-    mpp_frame_set_eos(enc->frame, 0);
-    mpp_frame_set_pts(enc->frame, (RK_S64)frame->pts_us);
-    
-    MppMeta meta = mpp_frame_get_meta(enc->frame);
-    
-    if (mpp_packet_init_with_buffer(&enc->packet, enc->pkt_buf) != MPP_OK) return -1;
-    mpp_packet_set_length(enc->packet, 0);
-    
-    if (meta) {
-        mpp_meta_set_packet(meta, KEY_OUTPUT_PACKET, enc->packet);
-        mpp_meta_set_buffer(meta, KEY_MOTION_INFO, NULL);
+    if (use_frame) {
+        mpp_frame_set_eos(use_frame, 0);
+        mpp_frame_set_pts(use_frame, (RK_S64)frame->pts_us);
+
+        if (mpp_packet_init_with_buffer(&enc->packet, enc->pkt_buf) != MPP_OK) {
+            if (used_external == 2 && use_frame) mpp_frame_deinit(&use_frame);
+            return -1;
+        }
+        mpp_packet_set_length(enc->packet, 0);
+
+        MppMeta meta_ext = mpp_frame_get_meta(use_frame);
+        if (meta_ext) {
+            mpp_meta_set_packet(meta_ext, KEY_OUTPUT_PACKET, enc->packet);
+            mpp_meta_set_buffer(meta_ext, KEY_MOTION_INFO, NULL);
+        }
+
+        if (enc->api->encode_put_frame(enc->ctx, use_frame) != MPP_OK) {
+            if (used_external == 2 && use_frame) mpp_frame_deinit(&use_frame);
+            return -1;
+        }
+    } else {
+        // 复制路径（原有逻辑）
+        uint8_t *dst = (uint8_t*)mpp_buffer_get_ptr(enc->frm_buf);
+        if (!dst) return -1;
+
+        if (enc->input_format == PIXEL_FORMAT_YUYV) {
+            int hor_stride = enc->stride_w * 2;  // YUYV stride
+            if (frame->stride_y == hor_stride) {
+                size_t total_size = (size_t)hor_stride * enc->stride_h;
+                if (frame->size >= total_size) {
+                    __builtin_prefetch(frame->data, 0, 3);
+                    __builtin_prefetch(dst, 1, 3);
+                    memcpy(dst, frame->data, total_size);
+                    goto do_encode_with_internal;
+                }
+            }
+            int line_bytes = enc->width * 2;
+            if (frame->stride_y > 0) {
+                for (int y = 0; y < enc->height; y++) {
+                    memcpy(dst + y * hor_stride,
+                           frame->data + y * frame->stride_y,
+                           line_bytes);
+                }
+            } else {
+                for (int y = 0; y < enc->height; y++) {
+                    memcpy(dst + y * hor_stride,
+                           frame->data + y * line_bytes,
+                           line_bytes);
+                }
+            }
+        } else { // NV12
+            if (frame->stride_y == enc->stride_w && frame->stride_uv == enc->stride_w) {
+                size_t total_size = (size_t)enc->stride_w * enc->stride_h * 3 / 2;
+                if (frame->size >= total_size) {
+                    __builtin_prefetch(frame->data, 0, 3);
+                    __builtin_prefetch(dst, 1, 3);
+                    memcpy(dst, frame->data, total_size);
+                    goto do_encode_with_internal;
+                }
+            }
+            if (frame->stride_y > 0 && frame->stride_y != enc->stride_w) {
+                for (int y = 0; y < enc->height; y++) {
+                    memcpy(dst + y * enc->stride_w,
+                           frame->data + y * frame->stride_y,
+                           enc->width);
+                }
+            } else {
+                for (int y = 0; y < enc->height; y++) {
+                    memcpy(dst + y * enc->stride_w,
+                           frame->data + y * enc->width,
+                           enc->width);
+                }
+            }
+            uint8_t *dst_uv = dst + enc->stride_w * enc->stride_h;
+            const uint8_t *src_uv = frame->data + frame->width * frame->height;
+            if (frame->stride_uv > 0 && frame->stride_uv != enc->stride_w) {
+                for (int y = 0; y < enc->height / 2; y++) {
+                    memcpy(dst_uv + y * enc->stride_w,
+                           src_uv + y * frame->stride_uv,
+                           enc->width);
+                }
+            } else {
+                for (int y = 0; y < enc->height / 2; y++) {
+                    memcpy(dst_uv + y * enc->stride_w,
+                           src_uv + y * enc->width,
+                           enc->width);
+                }
+            }
+        }
+
+do_encode_with_internal:
+        mpp_frame_set_eos(enc->frame, 0);
+        mpp_frame_set_pts(enc->frame, (RK_S64)frame->pts_us);
+
+        MppMeta meta = mpp_frame_get_meta(enc->frame);
+        if (mpp_packet_init_with_buffer(&enc->packet, enc->pkt_buf) != MPP_OK) return -1;
+        mpp_packet_set_length(enc->packet, 0);
+        if (meta) {
+            mpp_meta_set_packet(meta, KEY_OUTPUT_PACKET, enc->packet);
+            mpp_meta_set_buffer(meta, KEY_MOTION_INFO, NULL);
+        }
+        if (enc->api->encode_put_frame(enc->ctx, enc->frame) != MPP_OK) return -1;
     }
-    
-    if (enc->api->encode_put_frame(enc->ctx, enc->frame) != MPP_OK) return -1;
     
     MppPacket out_pkt = NULL;
     MPP_RET ret = enc->api->encode_get_packet(enc->ctx, &out_pkt);
@@ -270,6 +298,7 @@ encode_ready:
     if (ret == MPP_ERR_TIMEOUT || !out_pkt) {
         packet->data = NULL;
         packet->size = 0;
+        if (used_external == 2 && use_frame) mpp_frame_deinit(&use_frame);
         return 0;
     }
     if (ret != MPP_OK) return -1;
@@ -307,6 +336,7 @@ encode_ready:
     }
     
     mpp_packet_deinit(&out_pkt);
+    if (used_external == 2 && use_frame) mpp_frame_deinit(&use_frame);
     enc->packet = NULL;
     
     return 0;
@@ -417,4 +447,3 @@ const encoder_ops_t* encoder_get_mpp_ops(void)
 }
 
 #endif // JETKVM_HAVE_MPP
-

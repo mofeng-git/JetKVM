@@ -392,6 +392,9 @@ static void* uvc_thread_main(void* arg) {
                 frame.stride_y = dec_frame.hor_stride;
                 frame.stride_uv = dec_frame.hor_stride;
                 frame.pts_us = 0;
+                // 把 MPP 原生句柄传给编码器，允许零拷贝
+                frame.rk_mpp_frame = dec_frame.mpp_frame;
+                frame.rk_mpp_buffer = dec_frame.mpp_buffer;
                 
                 encoded_packet_t packet = {0};
                 int enc_ret = encoder->encode(encoder_ctx, &frame, &packet);

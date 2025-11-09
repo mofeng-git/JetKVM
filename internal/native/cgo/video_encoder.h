@@ -47,6 +47,12 @@ typedef struct {
     int stride_y;         // Y平面步长
     int stride_uv;        // UV平面步长（I420则是U/V分别的步长）
     uint64_t pts_us;      // 时间戳（微秒）
+
+    // 当存在硬件解码或外部组件提供的 MppFrame/MppBuffer 时，
+    // 填充下列句柄，编码器可直接使用外部缓冲区，避免CPU memcpy。
+    // 其他平台或未使用零拷贝时保持为 NULL。
+    void *rk_mpp_frame;   // 指向 MppFrame 的指针（可为空）
+    void *rk_mpp_buffer;  // 指向 MppBuffer 的指针（可为空）
 } video_frame_t;
 
 // 编码后的数据（H.264 NAL units）
@@ -95,4 +101,3 @@ void encoder_packet_free(encoded_packet_t *packet);
 #endif
 
 #endif // VIDEO_ENCODER_H
-
