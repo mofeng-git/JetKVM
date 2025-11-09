@@ -77,7 +77,7 @@ docker bridge 模式：
 sudo docker run --name jetkvm -itd --privileged=true \
     -v /lib/modules:/lib/modules:ro -v /dev:/dev \
     -v /sys/kernel/config:/sys/kernel/config \
-    -p 8080:8080 -p 4430:4430 \
+    -p 8080:8080 \
     silentwind0/jetkvm
 ```
 
