@@ -11,7 +11,7 @@ COPY build/init.sh /init.sh
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
-      libx264-164 libturbojpeg0 libyuv0 ca-certificates tzdata jq apache2-utils nano && \
+      libx264-164 libturbojpeg0 libyuv0 ca-certificates tzdata jq apache2-utils nano kmod && \
     apt clean && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /userdata/jetkvm/images && \

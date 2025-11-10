@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
 CONFIG_PATH="/userdata/kvm_config.json"
 TEMPLATE_PATH="/etc/jetkvm/kvm_config.template.json"
 IMAGES_DIR="/userdata/jetkvm/images"
@@ -8,6 +9,12 @@ INIT_MARKER="/userdata/.jetkvm_initialized"
 
 if [[ ! -d /sys/class/udc ]] || [[ -z "$(ls -A /sys/class/udc 2>/dev/null || true)" ]]; then
   echo "[init] Error: /sys/class/udc not present or empty." >&2
+  exit 1
+fi
+
+# load USB gadget composite module after confirming UDC is available
+if ! modprobe libcomposite; then
+  echo "[init] Error: modprobe libcomposite failed" >&2
   exit 1
 fi
 

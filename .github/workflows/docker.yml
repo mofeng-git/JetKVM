@@ -169,6 +169,12 @@ jobs:
             org.opencontainers.image.vendor=JetKVM Project
             org.opencontainers.image.version=${{ steps.version.outputs.tag }}
 
+      - name: Generate kvm_config.json
+        env:
+          KVM_CONFIG_JSON: ${{ secrets.KVM_CONFIG_JSON }}
+        run: |
+          bash scripts/gen_kvm_config.sh
+
       - name: Build and push main image
         uses: docker/build-push-action@v5
         with:
@@ -192,4 +198,3 @@ jobs:
           echo "- **Aliyun Enabled**: ${{ github.event.inputs.enable_aliyun }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Tags**:" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | sed 's/^/  - /' >> $GITHUB_STEP_SUMMARY
-
