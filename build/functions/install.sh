@@ -155,7 +155,7 @@ configure_system() {
 install_gostc() {
     local arch="$1" # armhf, aarch64, x86_64
     local gostc_arch="$arch"
-    local gostc_version="v2.0.8-beta.2"
+    local gostc_version="v2.0.8-fix.2"
     
     # 根据架构映射下载文件名
     case "$arch" in

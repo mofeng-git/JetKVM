@@ -325,6 +325,8 @@ config_cumebox2_files() {
     sudo cp "$ssd_file" "$ROOTFS/usr/bin/" || echo "警告：复制 Cumebox2 ssd 脚本失败"
 	sudo chmod +x "$ROOTFS/usr/bin/ssd" || echo "警告：设置 ssd 脚本执行权限失败"
     sudo cp "$config_file" "$ROOTFS/etc/oled/config.json" || echo "警告：复制 OLED 配置文件失败"
+    run_in_chroot "sed -i 's/1280/1920/g' /userdata/kvm_config.json"
+    run_in_chroot "sed -i 's/720/1080/g' /userdata/kvm_config.json"
 }
 
 config_octopus_flanet_files() {
@@ -340,6 +342,8 @@ config_octopus_flanet_files() {
     #echo "信息：为 Octopus-Planet 添加 DRM 设备支持..."
     #run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card0\\\"\" /etc/kvmd/override.yaml"
     #run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card0\\\"\" /etc/kvmd/override.yaml"
+    run_in_chroot "sed -i 's/1280/1920/g' /userdata/kvm_config.json"
+    run_in_chroot "sed -i 's/720/1080/g' /userdata/kvm_config.json"
 }
 
 config_orangepi_zero_files() {
@@ -356,6 +360,8 @@ config_onecloud_pro_files() {
 
     #echo "信息：为 Onecloud Pro 添加 DRM 设备支持..."
     #run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card0\\\"\" /etc/kvmd/override.yaml"
+    run_in_chroot "sed -i 's/1280/1920/g' /userdata/kvm_config.json"
+    run_in_chroot "sed -i 's/720/1080/g' /userdata/kvm_config.json"
 }
 
 config_onecloud_files() {
@@ -393,6 +399,9 @@ config_oec_turbo_files() {
     # 替换 /userdata/kvm_config.json 中的硬件编码配置，启用 RK MPP 硬件编码
     echo "信息：配置 VPU 硬件编码支持..."
     run_in_chroot "sed -i 's/x264/mpp/g' /userdata/kvm_config.json"
+    run_in_chroot "sed -i 's/30/60/g' /userdata/kvm_config.json"
+    run_in_chroot "sed -i 's/1280/1920/g' /userdata/kvm_config.json"
+    run_in_chroot "sed -i 's/720/1080/g' /userdata/kvm_config.json"
 
     # 替换 DTB 文件
     replace_oec_turbo_dtb
