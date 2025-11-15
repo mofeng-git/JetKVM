@@ -1,0 +1,15 @@
+[Unit]
+Description=JetKVM Service
+After=network-online.target sys-kernel-config.mount systemd-modules-load.service
+Wants=network-online.target sys-kernel-config.mount
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/app/jetkvm_app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

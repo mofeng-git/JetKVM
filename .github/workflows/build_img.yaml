@@ -1,0 +1,193 @@
+name: Build One-KVM Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      device_target:
+        description: 'Target device to build'
+        required: true
+        type: choice
+        options:
+          - onecloud
+          - onecloud-pro
+          - cumebox2
+          - chainedbox
+          - vm
+          - e900v22c
+          - octopus-flanet
+          - orangepi-zero
+          - oec-turbo
+          - all
+      create_release:
+        description: 'Create GitHub Release'
+        required: false
+        default: true
+        type: boolean
+      release_name:
+        description: 'Custom release name (optional)'
+        required: false
+        type: string
+
+env:
+  BUILD_DATE: ""
+  GIT_SHA: ""
+  RELEASE_TAG: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container:
+      image: node:18
+      options: --user root --privileged
+      env:
+        TZ: Asia/Shanghai
+      volumes:
+        - /dev:/dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set build environment
+        id: build_env
+        shell: bash
+        run: |
+          BUILD_DATE=$(date +%y%m%d-%H%M)
+          # 使用 GitHub 提供的环境变量避免 Git 权限问题
+          GIT_SHA="${GITHUB_SHA:0:7}"
+          GIT_BRANCH="${GITHUB_REF_NAME}"
+          
+          echo "BUILD_DATE=$BUILD_DATE" >> $GITHUB_ENV
+          echo "GIT_SHA=$GIT_SHA" >> $GITHUB_ENV  
+          echo "GIT_BRANCH=$GIT_BRANCH" >> $GITHUB_ENV
+          
+          # 生成唯一但不创建新分支的标识符
+          RELEASE_TAG="build-$BUILD_DATE-${{ github.event.inputs.device_target }}-$GIT_SHA"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          
+          echo "Build environment:"
+          echo "- Date: $BUILD_DATE"
+          echo "- Git SHA: $GIT_SHA"
+          echo "- Git Branch: $GIT_BRANCH" 
+          echo "- Release Tag: $RELEASE_TAG"
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get install -y --no-install-recommends \
+            sudo tzdata docker.io qemu-utils qemu-user-static binfmt-support parted e2fsprogs \
+            curl tar python3 python3-pip rsync git android-sdk-libsparse-utils coreutils zerofree wget \
+            file tree jq
+          apt-get clean
+          rm -rf /var/lib/apt/lists/*
+          ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
+          echo $TZ > /etc/timezone
+          update-binfmts --enable
+        env:
+          DEBIAN_FRONTEND: noninteractive
+
+      - name: Generate kvm_config.json
+        env:
+          KVM_CONFIG_JSON: ${{ secrets.KVM_CONFIG_JSON }}
+        run: |
+          bash scripts/gen_kvm_config.sh
+
+      - name: Build image
+        id: build
+        shell: bash
+        run: |
+          set -eo pipefail
+          
+          echo "=== Build Configuration ==="
+          echo "Target: ${{ github.event.inputs.device_target }}"
+          echo "Build Date: $BUILD_DATE"
+          echo "Git SHA: $GIT_SHA"
+          echo "Git Branch: $GIT_BRANCH"
+          echo "Output Directory: ${{ github.workspace }}/output"
+          echo "=========================="
+          
+          mkdir -p "${{ github.workspace }}/output"
+          chmod +x build/build_img.sh
+          
+          echo "Starting build process..."
+          if bash build/build_img.sh ${{ github.event.inputs.device_target }}; then
+            echo "BUILD_SUCCESS=true" >> $GITHUB_OUTPUT
+            echo "Build completed successfully!"
+          else
+            echo "BUILD_SUCCESS=false" >> $GITHUB_OUTPUT
+            echo "Build failed!" >&2
+            exit 1
+          fi
+        env:
+          CI_PROJECT_DIR: ${{ github.workspace }}
+          GITHUB_ACTIONS: true
+          OUTPUTDIR: ${{ github.workspace }}/output
+
+      - name: Collect build artifacts
+        id: artifacts
+        run: |
+          cd "${{ github.workspace }}/output"
+          
+          echo "=== Build Artifacts ==="
+          if [ -d "${{ github.workspace }}/output" ]; then
+            find . -name "*.xz" | head -20
+            
+            # 统计xz文件信息
+            ARTIFACT_COUNT=$(find . -name "*.xz" | wc -l)
+            TOTAL_SIZE=$(du -sh . | cut -f1)
+            
+            echo "ARTIFACT_COUNT=$ARTIFACT_COUNT" >> $GITHUB_OUTPUT
+            echo "TOTAL_SIZE=$TOTAL_SIZE" >> $GITHUB_OUTPUT
+          else
+            echo "No output directory found!"
+            echo "ARTIFACT_COUNT=0" >> $GITHUB_OUTPUT
+            echo "TOTAL_SIZE=0" >> $GITHUB_OUTPUT
+          fi
+          echo "======================"
+
+      - name: Create GitHub Release
+        if: steps.build.outputs.BUILD_SUCCESS == 'true' && github.event.inputs.create_release == 'true'
+        id: release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ github.event.inputs.release_name || format('One-KVM {0} 构建镜像 ({1})', github.event.inputs.device_target, env.BUILD_DATE) }}
+          body: |
+            ## 📦 GitHub Actions 镜像构建
+            
+            ### 构建信息
+            - **目标设备**: `${{ github.event.inputs.device_target }}`
+            - **构建时间**: `${{ env.BUILD_DATE }}`
+            - **Git 提交**: `${{ env.GIT_SHA }}` (分支: `${{ env.GIT_BRANCH }}`)
+            - **构建环境**: GitHub Actions (Ubuntu 22.04)
+            - **工作流ID**: `${{ github.run_id }}`
+            
+          files: ${{ github.workspace }}/output/*.xz
+          prerelease: true
+          make_latest: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build summary
+        if: always()
+        run: |
+          echo "## 📋 构建摘要" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| 项目 | 值 |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| **目标设备** | \`${{ github.event.inputs.device_target }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **构建时间** | \`${{ env.BUILD_DATE }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Git SHA** | \`${{ env.GIT_SHA }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Git 分支** | \`${{ env.GIT_BRANCH }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **构建状态** | ${{ steps.build.outputs.BUILD_SUCCESS == 'true' && '✅ 成功' || '❌ 失败' }} |" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.build.outputs.BUILD_SUCCESS }}" = "true" ]; then
+            echo "| **构建产物** | ${{ steps.artifacts.outputs.ARTIFACT_COUNT || '0' }} 个文件 (${{ steps.artifacts.outputs.TOTAL_SIZE || '0' }}) |" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ github.event.inputs.create_release }}" = "true" ]; then
+              echo "| **Release** | [${{ env.RELEASE_TAG }}](${{ steps.release.outputs.url }}) |" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
