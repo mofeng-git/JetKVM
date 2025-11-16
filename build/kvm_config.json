@@ -36,7 +36,7 @@
     "usb_config": {
       "vendor_id": "0x1d6b",
       "product_id": "0x0104",
-      "serial_number": "",
+      "serial_number": "CAFEBABE",
       "manufacturer": "JetKVM",
       "product": "USB Emulation Device"
     },
