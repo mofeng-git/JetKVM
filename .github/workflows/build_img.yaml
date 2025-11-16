@@ -1,4 +1,4 @@
-name: Build One-KVM Image
+name: Build JetKVM Image
 
 on:
   workflow_dispatch:
