@@ -1,30 +1,38 @@
 package kvm
 
 import (
-    "bufio"
-    "errors"
-    "io"
-    "strconv"
-    "strings"
-    "time"
+	"bufio"
+	"errors"
+	"io"
+	"strconv"
+	"strings"
+	"time"
 
-    "github.com/pion/webrtc/v4"
-    "go.bug.st/serial"
+	"github.com/pion/webrtc/v4"
+	"go.bug.st/serial"
 )
 
 const serialPortPath = "/dev/ttyS3"
 
 var port serial.Port
 var ErrSerialUnavailable = errors.New("serial port unavailable")
+var ErrATXUnavailable = errors.New("atx control unavailable")
+
+const (
+	atxDriverSerial = "serial"
+	atxDriverGPIO   = "gpio"
+)
+
+var currentATXDriver string
 
 func mountATXControl() error {
-    if port == nil {
-        return ErrSerialUnavailable
-    }
-    _ = port.SetMode(defaultMode)
-    go runATXControl()
+	if port == nil {
+		return ErrSerialUnavailable
+	}
+	_ = port.SetMode(defaultMode)
+	go runATXControl()
 
-    return nil
+	return nil
 }
 
 func unmountATXControl() error {
@@ -38,6 +46,56 @@ var (
 	btnRSTState bool
 	btnPWRState bool
 )
+
+func configuredATXDriver() string {
+	if config == nil || config.ATX == nil {
+		return atxDriverSerial
+	}
+	driver := strings.TrimSpace(strings.ToLower(config.ATX.Driver))
+	if driver == atxDriverGPIO {
+		return atxDriverGPIO
+	}
+	return atxDriverSerial
+}
+
+func runtimeATXDriver() string {
+	if currentATXDriver != "" {
+		return currentATXDriver
+	}
+	return configuredATXDriver()
+}
+
+func mountConfiguredATXControl() error {
+	driver := configuredATXDriver()
+	switch driver {
+	case atxDriverGPIO:
+		if err := mountGPIOATXControl(); err != nil {
+			return err
+		}
+	default:
+		driver = atxDriverSerial
+		if err := mountATXControl(); err != nil {
+			return err
+		}
+	}
+	currentATXDriver = driver
+	return nil
+}
+
+func unmountConfiguredATXControl() error {
+	driver := currentATXDriver
+	if driver == "" {
+		driver = configuredATXDriver()
+	}
+	var err error
+	if driver == atxDriverGPIO {
+		err = unmountGPIOATXControl()
+	} else {
+		err = unmountATXControl()
+	}
+	currentATXDriver = ""
+	return err
+}
 
 func runATXControl() {
 	scopedLogger := serialLogger.With().Str("service", "atx_control").Logger()
@@ -90,10 +148,24 @@ func runATXControl() {
 }
 
 func pressATXPowerButton(duration time.Duration) error {
-    if port == nil {
-        return ErrSerialUnavailable
-    }
-    _, err := port.Write([]byte("\n"))
+	if runtimeATXDriver() == atxDriverGPIO {
+		return gpioPressATXPowerButton(duration)
+	}
+	return serialPressATXPowerButton(duration)
+}
+
+func pressATXResetButton(duration time.Duration) error {
+	if runtimeATXDriver() == atxDriverGPIO {
+		return gpioPressATXResetButton(duration)
+	}
+	return serialPressATXResetButton(duration)
+}
+
+func serialPressATXPowerButton(duration time.Duration) error {
+	if port == nil {
+		return ErrSerialUnavailable
+	}
+	_, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -113,11 +185,11 @@ func pressATXPowerButton(duration time.Duration) error {
 	return nil
 }
 
-func pressATXResetButton(duration time.Duration) error {
-    if port == nil {
-        return ErrSerialUnavailable
-    }
-    _, err := port.Write([]byte("\n"))
+func serialPressATXResetButton(duration time.Duration) error {
+	if port == nil {
+		return ErrSerialUnavailable
+	}
+	_, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -138,13 +210,13 @@ func pressATXResetButton(duration time.Duration) error {
 }
 
 func mountDCControl() error {
-    if port == nil {
-        return ErrSerialUnavailable
-    }
-    _ = port.SetMode(defaultMode)
-    registerDCMetrics()
-    go runDCControl()
-    return nil
+	if port == nil {
+		return ErrSerialUnavailable
+	}
+	_ = port.SetMode(defaultMode)
+	registerDCMetrics()
+	go runDCControl()
+	return nil
 }
 
 func unmountDCControl() error {
@@ -231,10 +303,10 @@ func runDCControl() {
 }
 
 func setDCPowerState(on bool) error {
-    if port == nil {
-        return ErrSerialUnavailable
-    }
-    _, err := port.Write([]byte("\n"))
+	if port == nil {
+		return ErrSerialUnavailable
+	}
+	_, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -250,10 +322,10 @@ func setDCPowerState(on bool) error {
 }
 
 func setDCRestoreState(state int) error {
-    if port == nil {
-        return ErrSerialUnavailable
-    }
-    _, err := port.Write([]byte("\n"))
+	if port == nil {
+		return ErrSerialUnavailable
+	}
+	_, err := port.Write([]byte("\n"))
 	if err != nil {
 		return err
 	}
@@ -282,70 +354,72 @@ func initSerialPort() {
 	_ = reopenSerialPort()
 	switch config.ActiveExtension {
 	case "atx-power":
-		_ = mountATXControl()
+		if err := mountConfiguredATXControl(); err != nil {
+			serialLogger.Warn().Err(err).Msg("failed to mount ATX control")
+		}
 	case "dc-power":
 		_ = mountDCControl()
 	}
 }
 
 func reopenSerialPort() error {
-    if port != nil {
-        port.Close()
-    }
-    var err error
-    port, err = serial.Open(serialPortPath, defaultMode)
-    if err != nil {
-        // keep port nil on failure and propagate error
-        port = nil
-        serialLogger.Error().
-            Err(err).
-            Str("path", serialPortPath).
-            Interface("mode", defaultMode).
-            Msg("Error opening serial port")
-        return err
-    }
-    return nil
+	if port != nil {
+		port.Close()
+	}
+	var err error
+	port, err = serial.Open(serialPortPath, defaultMode)
+	if err != nil {
+		// keep port nil on failure and propagate error
+		port = nil
+		serialLogger.Error().
+			Err(err).
+			Str("path", serialPortPath).
+			Interface("mode", defaultMode).
+			Msg("Error opening serial port")
+		return err
+	}
+	return nil
 }
 
 func handleSerialChannel(d *webrtc.DataChannel) {
 	scopedLogger := serialLogger.With().
 		Uint16("data_channel_id", *d.ID()).Logger()
 
-    d.OnOpen(func() {
-        go func() {
-            defer func() {
-                if r := recover(); r != nil {
-                    scopedLogger.Error().Interface("panic", r).Msg("Recovered in serial reader loop")
-                }
-            }()
+	d.OnOpen(func() {
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					scopedLogger.Error().Interface("panic", r).Msg("Recovered in serial reader loop")
+				}
+			}()
 
-            // Ensure serial port is available before starting the read loop
-            if port == nil {
-                _ = reopenSerialPort()
-            }
-            if port == nil {
-                scopedLogger.Warn().Msg("Serial port unavailable; closing serial data channel")
-                _ = d.Close()
-                return
-            }
+			// Ensure serial port is available before starting the read loop
+			if port == nil {
+				_ = reopenSerialPort()
+			}
+			if port == nil {
+				scopedLogger.Warn().Msg("Serial port unavailable; closing serial data channel")
+				_ = d.Close()
+				return
+			}
 
-            buf := make([]byte, 1024)
-            for {
-                n, err := port.Read(buf)
-                if err != nil {
-                    if err != io.EOF {
-                        scopedLogger.Warn().Err(err).Msg("Failed to read from serial port")
-                    }
-                    break
-                }
-                err = d.Send(buf[:n])
-                if err != nil {
-                    scopedLogger.Warn().Err(err).Msg("Failed to send serial output")
-                    break
-                }
-            }
-        }()
-    })
+			buf := make([]byte, 1024)
+			for {
+				n, err := port.Read(buf)
+				if err != nil {
+					if err != io.EOF {
+						scopedLogger.Warn().Err(err).Msg("Failed to read from serial port")
+					}
+					break
+				}
+				err = d.Send(buf[:n])
+				if err != nil {
+					scopedLogger.Warn().Err(err).Msg("Failed to send serial output")
+					break
+				}
+			}
+		}()
+	})
 
 	d.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if port == nil {

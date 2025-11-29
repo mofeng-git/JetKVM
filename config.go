@@ -57,16 +57,16 @@ type KeyboardMacro struct {
 
 // VideoConfig centralizes video-related configuration to avoid top-level sprawl.
 type VideoConfig struct {
-    Backend       string `json:"backend"`        // "rv1106" or "uvc"
-    Device        string `json:"device"`         // e.g. "/dev/video0" (UVC only)
-    Width         int    `json:"width"`
-    Height        int    `json:"height"`
-    FPS           int    `json:"fps"`
-    Format        string `json:"format"`         // "MJPG" or "YUYV" (UVC)
-    Encoder       string `json:"encoder"`        // "x264" or "mpp"
-    BitrateKbps   int    `json:"bitrate_kbps"`
-    Keyint        int    `json:"keyint"`
-    RepeatHeaders bool   `json:"repeat_headers"`
+	Backend       string `json:"backend"` // "rv1106" or "uvc"
+	Device        string `json:"device"`  // e.g. "/dev/video0" (UVC only)
+	Width         int    `json:"width"`
+	Height        int    `json:"height"`
+	FPS           int    `json:"fps"`
+	Format        string `json:"format"`  // "MJPG" or "YUYV" (UVC)
+	Encoder       string `json:"encoder"` // "x264" or "mpp"
+	BitrateKbps   int    `json:"bitrate_kbps"`
+	Keyint        int    `json:"keyint"`
+	RepeatHeaders bool   `json:"repeat_headers"`
 }
 
 func (m *KeyboardMacro) Validate() error {
@@ -109,6 +109,7 @@ type Config struct {
 	KeyboardLayout       string                 `json:"keyboard_layout"`
 	EdidString           string                 `json:"hdmi_edid_string"`
 	ActiveExtension      string                 `json:"active_extension"`
+	ATX                  *ATXConfig             `json:"atx"`
 	DisplayRotation      string                 `json:"display_rotation"`
 	DisplayMaxBrightness int                    `json:"display_max_brightness"`
 	DisplayDimAfterSec   int                    `json:"display_dim_after_sec"`
@@ -121,22 +122,35 @@ type Config struct {
 	VideoSleepAfterSec   int                    `json:"video_sleep_after_sec"`
 	// Controls whether JetKVM opens and maintains the hardware watchdog at
 	// /dev/watchdog. Disable to prevent system reboot when the process exits.
-	WatchdogEnabled      bool                   `json:"watchdog_enabled"`
+	WatchdogEnabled bool `json:"watchdog_enabled"`
 	// Optional: choose a specific UDC when multiple exist
-	UsbUDCOverride       string                 `json:"usb_udc_override"`
+	UsbUDCOverride string `json:"usb_udc_override"`
 	// Grouped video configuration
-    Video                *VideoConfig           `json:"video"`
-    // Local WebRTC ICE when not using cloud signaling
-    LocalIceServers      []IceServer            `json:"local_ice_servers,omitempty"`
+	Video *VideoConfig `json:"video"`
+	// Local WebRTC ICE when not using cloud signaling
+	LocalIceServers []IceServer `json:"local_ice_servers,omitempty"`
 }
 
 // IceServer is a minimal JSON-configurable representation of an ICE server
 // (STUN/TURN) used in local/non-cloud mode. It intentionally mirrors the
 // browser RTCIceServer shape so the UI can reuse it directly.
 type IceServer struct {
-    URLs       []string `json:"urls"`
-    Username   string   `json:"username,omitempty"`
-    Credential string   `json:"credential,omitempty"`
+	URLs       []string `json:"urls"`
+	Username   string   `json:"username,omitempty"`
+	Credential string   `json:"credential,omitempty"`
+}
+
+type ATXConfig struct {
+	Driver string         `json:"driver"`
+	GPIO   *ATXGPIOConfig `json:"gpio"`
+}
+
+type ATXGPIOConfig struct {
+	PowerButtonPin   string `json:"power_button_pin"`
+	ResetButtonPin   string `json:"reset_button_pin"`
+	PowerLedPin      string `json:"power_led_pin"`
+	HddLedPin        string `json:"hdd_led_pin"`
+	OutputActiveHigh bool   `json:"output_active_high"`
 }
 
 func (c *Config) GetDisplayRotation() uint16 {
@@ -161,10 +175,16 @@ func (c *Config) SetDisplayRotation(rotation string) error {
 const configPath = "/userdata/kvm_config.json"
 
 var defaultConfig = &Config{
-	CloudURL:             "https://api.jetkvm.com",
-	CloudAppURL:          "https://app.jetkvm.com",
-	AutoUpdateEnabled:    true, // Set a default value
-	ActiveExtension:      "",
+	CloudURL:          "https://api.jetkvm.com",
+	CloudAppURL:       "https://app.jetkvm.com",
+	AutoUpdateEnabled: true, // Set a default value
+	ActiveExtension:   "",
+	ATX: &ATXConfig{
+		Driver: "serial",
+		GPIO: &ATXGPIOConfig{
+			OutputActiveHigh: true,
+		},
+	},
 	KeyboardMacros:       []KeyboardMacro{},
 	DisplayRotation:      "270",
 	KeyboardLayout:       "en-US",
@@ -281,6 +301,12 @@ func LoadConfig() {
 
 	if loadedConfig.JigglerConfig == nil {
 		loadedConfig.JigglerConfig = defaultConfig.JigglerConfig
+	}
+
+	if loadedConfig.ATX == nil {
+		loadedConfig.ATX = defaultConfig.ATX
+	} else if loadedConfig.ATX.GPIO == nil {
+		loadedConfig.ATX.GPIO = defaultConfig.ATX.GPIO
 	}
 
 	// fixup old keyboard layout value

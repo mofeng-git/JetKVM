@@ -344,6 +344,27 @@ config_octopus_flanet_files() {
     #run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card0\\\"\" /etc/kvmd/override.yaml"
     run_in_chroot "sed -i 's/1280/1920/g' /userdata/kvm_config.json"
     run_in_chroot "sed -i 's/720/1080/g' /userdata/kvm_config.json"
+
+    run_in_chroot "python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path('/userdata/kvm_config.json')
+data = json.loads(path.read_text())
+atx = data.setdefault('atx', {})
+atx['driver'] = 'gpio'
+gpio = atx.setdefault('gpio', {})
+gpio.update({
+    'power_button_pin': '508',
+    'reset_button_pin': '',
+    'power_led_pin': '',
+    'hdd_led_pin': '',
+    'output_active_high': False,
+})
+path.write_text(json.dumps(data, indent=2))
+PY"
+
+    echo "信息：Octopus-Planet 特定配置完成。"
 }
 
 config_orangepi_zero_files() {
@@ -362,15 +383,56 @@ config_onecloud_pro_files() {
     #run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card0\\\"\" /etc/kvmd/override.yaml"
     run_in_chroot "sed -i 's/1280/1920/g' /userdata/kvm_config.json"
     run_in_chroot "sed -i 's/720/1080/g' /userdata/kvm_config.json"
+
+        run_in_chroot "python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path('/userdata/kvm_config.json')
+data = json.loads(path.read_text())
+atx = data.setdefault('atx', {})
+atx['driver'] = 'gpio'
+gpio = atx.setdefault('gpio', {})
+gpio.update({
+    'power_button_pin': '519',
+    'reset_button_pin': '',
+    'power_led_pin': '',
+    'hdd_led_pin': '',
+    'output_active_high': False,
+})
+path.write_text(json.dumps(data, indent=2))
+PY"
+
+    echo "信息：Onecloud Pro 特定配置完成。"
 }
 
 config_onecloud_files() {
-    echo "信息：配置 Onecloud 特定文件..."
-    
-    #echo "信息：为 Onecloud 添加 DRM 设备支持..."
-    #run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card1\\\"\" /etc/kvmd/override.yaml"
-    
-    echo "信息：Onecloud 特定配置完成。"
+	echo "信息：配置 Onecloud 特定文件..."
+	
+	#echo "信息：为 Onecloud 添加 DRM 设备支持..."
+	#run_in_chroot "sed -i \"/--device=\\/dev\\/video0/a\\            - \\\"--drm-device=/dev/dri/card1\\\"\" /etc/kvmd/override.yaml"
+
+	echo "信息：写入 Onecloud 专属 ATX GPIO 配置..."
+    run_in_chroot "python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path('/userdata/kvm_config.json')
+data = json.loads(path.read_text())
+atx = data.setdefault('atx', {})
+atx['driver'] = 'gpio'
+gpio = atx.setdefault('gpio', {})
+gpio.update({
+    'power_button_pin': '420',
+    'reset_button_pin': '436',
+    'power_led_pin': '435',
+    'hdd_led_pin': '437',
+    'output_active_high': False,
+})
+path.write_text(json.dumps(data, indent=2))
+PY"
+	
+	echo "信息：Onecloud 特定配置完成。"
 }
 
 oec_turbo_rootfs() {
